@@ -45,6 +45,11 @@ static void reverse(char *buf, int size) {
 int DFP_print_integer(struct DFP *self, unsigned int value) {
 	int i, n;
 
+	if (value == 0) {
+		DFP_putc(self, '0');
+		return 1;
+	}
+
 	for (i = 0; i < DFP_BUFFER_SIZE && value > 0; value /= 10, i++)
 		self->buffer[i] = value % 10 + '0';
 
@@ -71,11 +76,13 @@ int DFP_print_long_integer(struct DFP *self, unsigned long long value) {
 
 	tmp1 = value / 10000000000;
 	value = value % 10000000000;
-	n += DFP_print_integer(self, tmp1);
+	if (tmp1 > 0)
+		n += DFP_print_integer(self, tmp1);
 
 	tmp1 = value / 1000;
 	tmp2 = value % 1000;
-	n += DFP_print_integer(self, tmp1);
+	if (tmp1 > 0)
+		n += DFP_print_integer(self, tmp1);
 
 	n += DFP_print_integer(self, tmp2);
 

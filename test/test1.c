@@ -13,10 +13,10 @@ int main(int argc, const char **argv) {
 	DFP_PRINTF_INIT();
 	DFP_REGISTER_PUTS(my_puts);
 
-	a = printf("hello, world %u %llu ~\n", 10, (unsigned long long) 10);
+	a = printf("hello, world %u %llu ~\n", 0, (unsigned long long) 10);
 	printf("\t>> size: %d\n", a);
 
-	a = DFP_PRINTF("hello, world %u %llu ~\n", 10, (unsigned long long) 10);
+	a = DFP_PRINTF("hello, world %u %llu ~\n", 0, (unsigned long long) 10);
 	DFP_PRINTF("\t>> size: %d\n", a);
 
 	/// 0x1234567812345678 == 1311768465173141112
