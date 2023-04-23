@@ -42,7 +42,7 @@ static void reverse(char *buf, int size) {
 		swap_arr_by_index(buf, tmp, i, size - i - 1);
 }
 
-int DFP_print_integer(struct DFP *self, int value) {
+int DFP_print_integer(struct DFP *self, unsigned int value) {
 	int i, n;
 
 	for (i = 0; i < DFP_BUFFER_SIZE && value > 0; value /= 10, i++)
@@ -57,10 +57,17 @@ int DFP_print_integer(struct DFP *self, int value) {
 	return n;
 }
 
-int DFP_print_integer_ll(struct DFP *self, long long value) {
-	int tmp1, tmp2, n = 0;
+int DFP_print_integer_signed(struct DFP *self, int value) {
+	int n = 0;
 
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
+	n += DFP_print_integer(self, value);
+
+	return n;
+}
+
+int DFP_print_long_integer(struct DFP *self, unsigned long long value) {
+	int tmp1, tmp2, n = 0;
 
 	tmp1 = value / 10000000000;
 	value = value % 10000000000;
@@ -75,16 +82,31 @@ int DFP_print_integer_ll(struct DFP *self, long long value) {
 	return n;
 }
 
-int DFP_print_d(struct DFP *self) {
-	int value, n = 0;
+int DFP_print_long_integer_signed(struct DFP *self, long long value) {
+	int n = 0;
 
-	self->fmt++;
-
-	value = va_arg(self->ap, int);
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
-	n += DFP_print_integer(self, value);
+	n += DFP_print_long_integer(self, value);
 
 	return n;
+}
+
+int DFP_print_u(struct DFP *self) {
+	unsigned int value;
+
+	self->fmt++;
+	value = va_arg(self->ap, unsigned int);
+
+	return DFP_print_integer(self, value);
+}
+
+int DFP_print_d(struct DFP *self) {
+	int value;
+
+	self->fmt++;
+	value = va_arg(self->ap, int);
+
+	return DFP_print_integer_signed(self, value);
 }
 
 /// return 1 when s1 and s2 equals
@@ -97,19 +119,61 @@ static int cmp(const char *s1, const char *s2, int size) {
 	return !cmp_value && size == 0;
 }
 
-int DFP_print_ll(struct DFP *self) {
+int DFP_print_lld(struct DFP *self) {
 	long long value;
-
-	if (!cmp(self->fmt, "lld", 3)) {
-		self->error = DFP_INVALID_FLAG;
-		self->fmt++;
-		return 0;
-	}
 
 	self->fmt += 3;
 	value = va_arg(self->ap, long long);
 
-	return DFP_print_integer_ll(self, value);
+	return DFP_print_long_integer_signed(self, value);
+}
+
+int DFP_print_llu(struct DFP *self) {
+	unsigned long long value;
+
+	self->fmt += 3;
+	value = va_arg(self->ap, unsigned long long);
+
+	return DFP_print_long_integer(self, value);
+}
+
+int DFP_print_ld(struct DFP *self) {
+	long value;
+
+	self->fmt += 2;
+	value = va_arg(self->ap, long);
+
+	return DFP_print_long_integer_signed(self, value);
+}
+
+int DFP_print_lu(struct DFP *self) {
+	unsigned long value;
+
+	self->fmt += 2;
+	value = va_arg(self->ap, unsigned long);
+
+	return DFP_print_long_integer(self, value);
+}
+
+int DFP_print_l(struct DFP *self) {
+	long long value;
+
+	if (cmp(self->fmt, "lld", 3))
+		return DFP_print_lld(self);
+
+	if (cmp(self->fmt, "llu", 3))
+		return DFP_print_llu(self);
+
+	if (cmp(self->fmt, "ld", 2))
+		return DFP_print_ld(self);
+
+	if (cmp(self->fmt, "lu", 2))
+		return DFP_print_lu(self);
+
+	self->error = DFP_INVALID_FLAG;
+	self->fmt++;
+
+	return 0;
 }
 
 int DFP_print_f(struct DFP *self) {
@@ -122,7 +186,7 @@ int DFP_print_f(struct DFP *self) {
 	value = va_arg(self->ap, FLOAT_PASSING_TYPE);
 
 	ltmp = (long long) value;
-	n += DFP_print_integer_ll(self, ltmp);
+	n += DFP_print_long_integer_signed(self, ltmp);
 
 	DFP_putc(self, '.');
 	n++;
@@ -163,7 +227,10 @@ int DFP_handle_flag(struct DFP *self) {
 
 	switch (*self->fmt) {
 	case 'l':
-		return DFP_print_ll(self);
+		return DFP_print_l(self);
+	case 'u':
+		return DFP_print_u(self);
+	case 'i':
 	case 'd':
 		return DFP_print_d(self);
 	case 'f':
