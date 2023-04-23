@@ -7,6 +7,9 @@
 	? (DFP_putc(self, '-'), 1) \
 	: 0
 
+#define swap_arr_by_index(arr, tmp, i1, i2) \
+	do { tmp = arr[i1]; arr[i1] = arr[i2]; arr[i2] = tmp; } while (0)
+
 #ifndef FLOAT_PASSING_TYPE
 #define FLOAT_PASSING_TYPE double
 #endif
@@ -33,14 +36,10 @@ int DFP_putc(struct DFP *self, int c) {
 }
 
 static void reverse(char *buf, int size) {
-	int i, j, k, tmp;
+	int i, j, tmp;
 
-	for (i = 0, j = size / 2; i < j; i++) {
-		k = size - i - 1;
-		tmp = buf[i];
-		buf[i] = buf[k];
-		buf[k] = tmp;
-	}
+	for (i = 0, j = size / 2; i < j; i++)
+		swap_arr_by_index(buf, tmp, i, size - i - 1);
 }
 
 int DFP_print_integer(struct DFP *self, int value) {
@@ -58,18 +57,8 @@ int DFP_print_integer(struct DFP *self, int value) {
 	return n;
 }
 
-int DFP_print_d(struct DFP *self, int value) {
-	int n = 0;
-
-	n += ABS_NUM_AND_PUT_CHAR(self, value);
-	n += DFP_print_integer(self, value);
-
-	return n;
-}
-
-int DFP_print_ll(struct DFP *self, long long value) {
-	int tmp1, tmp2;
-	int n = 0;
+int DFP_print_integer_ll(struct DFP *self, long long value) {
+	int tmp1, tmp2, n = 0;
 
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
 
@@ -86,37 +75,15 @@ int DFP_print_ll(struct DFP *self, long long value) {
 	return n;
 }
 
-int DFP_print_f(struct DFP *self, float value) {
-	int n = 0;
-	long long ltmp;
-	int tmp;
+int DFP_print_d(struct DFP *self) {
+	int value, n = 0;
 
-	ltmp = (long long) value;
-	n += DFP_print_ll(self, ltmp);
+	self->fmt++;
 
-	DFP_putc(self, '.');
-	n++;
+	value = va_arg(self->ap, int);
+	n += ABS_NUM_AND_PUT_CHAR(self, value);
+	n += DFP_print_integer(self, value);
 
-	tmp = (int) ((value - ltmp) * 1000);
-	n += DFP_print_integer(self, tmp);
-
-	return n;
-}
-
-int DFP_handle_normal(struct DFP *self) {
-	const char current_char = *self->fmt;
-	int n = 0;
-
-	switch (current_char) {
-	case '%':
-		self->state = DFP_STATE_FLAG;
-		self->fmt++;
-		break;
-	default:
-		DFP_putc(self, current_char);
-		self->fmt++;
-		n++;
-	}
 	return n;
 }
 
@@ -130,41 +97,85 @@ static int cmp(const char *s1, const char *s2, int size) {
 	return !cmp_value && size == 0;
 }
 
+int DFP_print_ll(struct DFP *self) {
+	long long value;
+
+	if (!cmp(self->fmt, "lld", 3)) {
+		self->error = DFP_INVALID_FLAG;
+		self->fmt++;
+		return 0;
+	}
+
+	self->fmt += 3;
+	value = va_arg(self->ap, long long);
+
+	return DFP_print_integer_ll(self, value);
+}
+
+int DFP_print_f(struct DFP *self) {
+	int tmp, n = 0;
+	long long ltmp;
+	float value;
+
+	self->fmt++;
+
+	value = va_arg(self->ap, FLOAT_PASSING_TYPE);
+
+	ltmp = (long long) value;
+	n += DFP_print_integer_ll(self, ltmp);
+
+	DFP_putc(self, '.');
+	n++;
+
+	tmp = (int) ((value - ltmp) * 1000000);
+	n += DFP_print_integer(self, tmp);
+
+	return n;
+}
+
+int DFP_print_s(struct DFP *self) {
+	self->fmt++;
+	return self->puts(va_arg(self->ap, const char *));
+}
+
+int DFP_print_c(struct DFP *self) {
+	self->fmt++;
+	DFP_putc(self, va_arg(self->ap, int));
+	return 1;
+}
+
+int DFP_handle_normal(struct DFP *self) {
+	const char current_char = *self->fmt;
+
+	self->fmt++;
+
+	if (current_char == '%') {
+		self->state = DFP_STATE_FLAG;
+		return 0;
+	}
+
+	DFP_putc(self, current_char);
+	return 1;
+}
+
 int DFP_handle_flag(struct DFP *self) {
-	int n = 0;
+	self->state = DFP_STATE_NORMAL;
 
 	switch (*self->fmt) {
 	case 'l':
-		if (cmp(self->fmt, "lld", 3)) {
-			self->fmt += 3;
-			n = DFP_print_ll(self, va_arg(self->ap, long long));
-		} else {
-			self->error = DFP_INVALID_FLAG;
-		}
-		break;
+		return DFP_print_ll(self);
 	case 'd':
-		self->fmt++;
-		n = DFP_print_d(self, va_arg(self->ap, int));
-		break;
+		return DFP_print_d(self);
 	case 'f':
-		self->fmt++;
-		n = DFP_print_f(self, va_arg(self->ap, FLOAT_PASSING_TYPE));
-		break;
+		return DFP_print_f(self);
 	case 's':
-		self->fmt++;
-		n = self->puts(va_arg(self->ap, const char *));
-		break;
+		return DFP_print_s(self);
 	case 'c':
-		self->fmt++;
-		DFP_putc(self, va_arg(self->ap, int));
-		n++;
-		break;
+		return DFP_print_c(self);
 	default:
 		self->error = DFP_INVALID_FLAG;
+		return 0;
 	}
-
-	self->state = DFP_STATE_NORMAL;
-	return n;
 }
 
 int DFP_step(struct DFP *self) {
@@ -177,6 +188,7 @@ int DFP_step(struct DFP *self) {
 	case DFP_STATE_FLAG:
 		return DFP_handle_flag(self);
 	case DFP_STATE_WIDTH:
+	default:
 		self->error = DFP_WIDTH_UNSUPPORTED;
 		return 0;
 	}
