@@ -20,8 +20,8 @@ struct DFP {
 };
 
 int DFP_PRINTF(const char *fmt, ...);
-int DFP_PRINTF_INIT();
-int DFP_REGISTER_PUTS(int (*puts)(const char *));
+void DFP_PRINTF_INIT();
+void DFP_REGISTER_PUTS(int (*puts)(const char *));
 
 #endif
 

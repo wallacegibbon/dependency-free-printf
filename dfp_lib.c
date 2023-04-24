@@ -257,11 +257,11 @@ int DFP_PRINTF(const char *fmt, ...) {
 	return ret;
 }
 
-int DFP_PRINTF_INIT() {
+void DFP_PRINTF_INIT() {
 	DFP_initialize(&my_dfp);
 }
 
-int DFP_REGISTER_PUTS(int (*puts)(const char *)) {
+void DFP_REGISTER_PUTS(int (*puts)(const char *)) {
 	DFP_register_puts(&my_dfp, puts);
 }
 
