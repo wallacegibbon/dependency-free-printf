@@ -76,13 +76,11 @@ int DFP_print_long_integer(struct DFP *self, unsigned long long value) {
 
 	tmp1 = value / 10000000000;
 	value = value % 10000000000;
-	if (tmp1 > 0)
-		n += DFP_print_integer(self, tmp1);
+	if (tmp1 > 0) n += DFP_print_integer(self, tmp1);
 
 	tmp1 = value / 1000;
 	tmp2 = value % 1000;
-	if (tmp1 > 0)
-		n += DFP_print_integer(self, tmp1);
+	if (tmp1 > 0) n += DFP_print_integer(self, tmp1);
 
 	n += DFP_print_integer(self, tmp2);
 
@@ -98,22 +96,19 @@ int DFP_print_long_integer_signed(struct DFP *self, long long value) {
 	return n;
 }
 
-int DFP_print_u(struct DFP *self) {
-	unsigned int value;
-
+int DFP_print_p(struct DFP *self) {
 	self->fmt++;
-	value = va_arg(self->ap, unsigned int);
+	return DFP_print_long_integer(self, va_arg(self->ap, unsigned long));
+}
 
-	return DFP_print_integer(self, value);
+int DFP_print_u(struct DFP *self) {
+	self->fmt++;
+	return DFP_print_integer(self, va_arg(self->ap, unsigned int));
 }
 
 int DFP_print_d(struct DFP *self) {
-	int value;
-
 	self->fmt++;
-	value = va_arg(self->ap, int);
-
-	return DFP_print_integer_signed(self, value);
+	return DFP_print_integer_signed(self, va_arg(self->ap, int));
 }
 
 /// return 1 when s1 and s2 equals
@@ -127,59 +122,33 @@ static int cmp(const char *s1, const char *s2, int size) {
 }
 
 int DFP_print_lld(struct DFP *self) {
-	long long value;
-
 	self->fmt += 3;
-	value = va_arg(self->ap, long long);
-
-	return DFP_print_long_integer_signed(self, value);
+	return DFP_print_long_integer_signed(self, va_arg(self->ap, long long));
 }
 
 int DFP_print_llu(struct DFP *self) {
-	unsigned long long value;
-
 	self->fmt += 3;
-	value = va_arg(self->ap, unsigned long long);
-
-	return DFP_print_long_integer(self, value);
+	return DFP_print_long_integer(self, va_arg(self->ap, unsigned long long));
 }
 
 int DFP_print_ld(struct DFP *self) {
-	long value;
-
 	self->fmt += 2;
-	value = va_arg(self->ap, long);
-
-	return DFP_print_long_integer_signed(self, value);
+	return DFP_print_long_integer_signed(self, va_arg(self->ap, long));
 }
 
 int DFP_print_lu(struct DFP *self) {
-	unsigned long value;
-
 	self->fmt += 2;
-	value = va_arg(self->ap, unsigned long);
-
-	return DFP_print_long_integer(self, value);
+	return DFP_print_long_integer(self, va_arg(self->ap, unsigned long));
 }
 
 int DFP_print_l(struct DFP *self) {
-	long long value;
-
-	if (cmp(self->fmt, "lld", 3))
-		return DFP_print_lld(self);
-
-	if (cmp(self->fmt, "llu", 3))
-		return DFP_print_llu(self);
-
-	if (cmp(self->fmt, "ld", 2))
-		return DFP_print_ld(self);
-
-	if (cmp(self->fmt, "lu", 2))
-		return DFP_print_lu(self);
+	if (cmp(self->fmt, "lld", 3)) return DFP_print_lld(self);
+	if (cmp(self->fmt, "llu", 3)) return DFP_print_llu(self);
+	if (cmp(self->fmt, "ld", 2)) return DFP_print_ld(self);
+	if (cmp(self->fmt, "lu", 2)) return DFP_print_lu(self);
 
 	self->error = DFP_INVALID_FLAG;
 	self->fmt++;
-
 	return 0;
 }
 
@@ -189,7 +158,6 @@ int DFP_print_f(struct DFP *self) {
 	float value;
 
 	self->fmt++;
-
 	value = va_arg(self->ap, FLOAT_PASSING_TYPE);
 
 	ltmp = (long long) value;
@@ -233,19 +201,14 @@ int DFP_handle_flag(struct DFP *self) {
 	self->state = DFP_STATE_NORMAL;
 
 	switch (*self->fmt) {
-	case 'l':
-		return DFP_print_l(self);
-	case 'u':
-		return DFP_print_u(self);
+	case 'l': return DFP_print_l(self);
+	case 'u': return DFP_print_u(self);
+	case 'p': return DFP_print_p(self);
 	case 'i':
-	case 'd':
-		return DFP_print_d(self);
-	case 'f':
-		return DFP_print_f(self);
-	case 's':
-		return DFP_print_s(self);
-	case 'c':
-		return DFP_print_c(self);
+	case 'd': return DFP_print_d(self);
+	case 'f': return DFP_print_f(self);
+	case 's': return DFP_print_s(self);
+	case 'c': return DFP_print_c(self);
 	default:
 		self->error = DFP_INVALID_FLAG;
 		return 0;
@@ -257,10 +220,8 @@ int DFP_step(struct DFP *self) {
 		return 0;
 
 	switch (self->state) {
-	case DFP_STATE_NORMAL:
-		return DFP_handle_normal(self);
-	case DFP_STATE_FLAG:
-		return DFP_handle_flag(self);
+	case DFP_STATE_NORMAL: return DFP_handle_normal(self);
+	case DFP_STATE_FLAG: return DFP_handle_flag(self);
 	case DFP_STATE_WIDTH:
 	default:
 		self->error = DFP_WIDTH_UNSUPPORTED;

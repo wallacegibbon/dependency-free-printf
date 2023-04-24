@@ -31,6 +31,9 @@ int main(int argc, const char **argv) {
 	printf("%f\n", c);
 	DFP_PRINTF("%f\n", c);
 
+	printf("<*> %p %c\n", &c, '!');
+	DFP_PRINTF("<*> %p %c\n", &c, '!');
+
 	return 0;
 }
 
