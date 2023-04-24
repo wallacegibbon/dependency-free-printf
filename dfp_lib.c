@@ -3,9 +3,9 @@
 
 #define ABS_NUM_AND_RET_SIGN(num) (((num) < 0) ? (num = -num, 1) : 0)
 
-#define ABS_NUM_AND_PUT_CHAR(self, value) ABS_NUM_AND_RET_SIGN(value) \
-	? (DFP_putc(self, '-'), 1) \
-	: 0
+#define ABS_NUM_AND_PUT_CHAR(self, value) (ABS_NUM_AND_RET_SIGN(value) \
+	? DFP_putc(self, '-') \
+	: 0)
 
 #define swap_arr_by_index(arr, tmp, i1, i2) \
 	do { tmp = arr[i1]; arr[i1] = arr[i2]; arr[i2] = tmp; } while (0)
@@ -28,27 +28,23 @@ void DFP_register_puts(struct DFP *self, int (*puts)(const char *)) {
 	self->puts = puts;
 }
 
+/// Unlike `putc` in standard C, `DFP_putc` returns 1
 int DFP_putc(struct DFP *self, int c) {
 	char buf[2] = { c, '\0' };
-
 	self->puts(buf);
-	return c;
+	return 1;
 }
 
 static void reverse(char *buf, int size) {
-	int i, j, tmp;
+	int i, j;
+	char tmp;
 
 	for (i = 0, j = size / 2; i < j; i++)
 		swap_arr_by_index(buf, tmp, i, size - i - 1);
 }
 
-int DFP_print_integer(struct DFP *self, unsigned int value) {
+int DFP_print_positive_integer(struct DFP *self, unsigned int value) {
 	int i, n;
-
-	if (value == 0) {
-		DFP_putc(self, '0');
-		return 1;
-	}
 
 	for (i = 0; i < DFP_BUFFER_SIZE && value > 0; value /= 10, i++)
 		self->buffer[i] = value % 10 + '0';
@@ -58,8 +54,14 @@ int DFP_print_integer(struct DFP *self, unsigned int value) {
 	self->buffer[n] = '\0';
 
 	self->puts(self->buffer);
-
 	return n;
+}
+
+int DFP_print_integer(struct DFP *self, unsigned int value) {
+	if (value == 0)
+		return DFP_putc(self, '0');
+	else
+		return DFP_print_positive_integer(self, value);
 }
 
 int DFP_print_integer_signed(struct DFP *self, int value) {
@@ -67,7 +69,6 @@ int DFP_print_integer_signed(struct DFP *self, int value) {
 
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
 	n += DFP_print_integer(self, value);
-
 	return n;
 }
 
@@ -83,7 +84,6 @@ int DFP_print_long_integer(struct DFP *self, unsigned long long value) {
 	if (tmp1 > 0) n += DFP_print_integer(self, tmp1);
 
 	n += DFP_print_integer(self, tmp2);
-
 	return n;
 }
 
@@ -92,7 +92,6 @@ int DFP_print_long_integer_signed(struct DFP *self, long long value) {
 
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
 	n += DFP_print_long_integer(self, value);
-
 	return n;
 }
 
@@ -179,22 +178,19 @@ int DFP_print_s(struct DFP *self) {
 
 int DFP_print_c(struct DFP *self) {
 	self->fmt++;
-	DFP_putc(self, va_arg(self->ap, int));
-	return 1;
+	return DFP_putc(self, va_arg(self->ap, int));
 }
 
 int DFP_handle_normal(struct DFP *self) {
 	const char current_char = *self->fmt;
 
 	self->fmt++;
-
 	if (current_char == '%') {
 		self->state = DFP_STATE_FLAG;
 		return 0;
 	}
 
-	DFP_putc(self, current_char);
-	return 1;
+	return DFP_putc(self, current_char);
 }
 
 int DFP_handle_flag(struct DFP *self) {

@@ -31,8 +31,8 @@ int main(int argc, const char **argv) {
 	printf("%f\n", c);
 	DFP_PRINTF("%f\n", c);
 
-	printf("<*> %p %c\n", &c, '!');
-	DFP_PRINTF("<*> %p %c\n", &c, '!');
+	printf("<*> %p\t(%lu) %c\n", &c, (unsigned long) &c, '!');
+	DFP_PRINTF("<*> %p\t(%lu) %c\n", &c, &c, '!');
 
 	return 0;
 }
