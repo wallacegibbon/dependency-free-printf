@@ -231,8 +231,16 @@ int DFP_step(struct DFP *self) {
 #endif
 
 #if !defined(va_copy)
-#define va_copy(dst, src) ((dst) = (src))
+//#define va_copy(dst, src) ((dst) = (src)) // this cause will some error on some compilers
+#define va_copy(dst, src) memcpy_((&dst), (&src), sizeof(va_list))
 #endif
+
+static void memcpy_(void *dest, void *src, size_t n) {
+	char *d = dest, *s = src;
+	int i;
+	for (i = 0; i < n; i++)
+		*d = *s;
+}
 
 int DFP_vprintf(struct DFP *self, const char *fmt, va_list ap) {
 	int n = 0;
