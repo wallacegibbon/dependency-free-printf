@@ -225,6 +225,15 @@ int DFP_step(struct DFP *self) {
 	}
 }
 
+/// The `va_copy` macro is from C99 standard, old compilers may not support it.
+#if !defined(va_copy) && defined(__va_copy)
+#define va_copy(dst, src) __va_copy(dst, src)
+#endif
+
+#if !defined(va_copy)
+#define va_copy(dst, src) ((dst) = (src))
+#endif
+
 int DFP_vprintf(struct DFP *self, const char *fmt, va_list ap) {
 	int n = 0;
 
