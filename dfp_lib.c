@@ -30,7 +30,12 @@ void DFP_register_puts(struct DFP *self, int (*puts)(const char *)) {
 
 /// Unlike `putc` in standard C, `DFP_putc` returns 1
 int DFP_putc(struct DFP *self, int c) {
-	char buf[2] = { c, '\0' };
+	/// The following syntax is not supported on some platforms.
+	//char buf[2] = { c, '\0' };
+
+	char buf[2] = { '\0' };
+	buf[0] = c;
+
 	self->puts(buf);
 	return 1;
 }
