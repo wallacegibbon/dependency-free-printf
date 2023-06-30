@@ -48,11 +48,17 @@ static void reverse(char *buf, int size) {
 		swap_arr_by_index(buf, tmp, i, size - i - 1);
 }
 
-int DFP_print_positive_integer(struct DFP *self, unsigned int value) {
+int DFP_print_positive_integer(struct DFP *self, unsigned int value, int fill_to) {
 	int i, n;
 
 	for (i = 0; i < DFP_BUFFER_SIZE && value > 0; value /= 10, i++)
 		self->buffer[i] = value % 10 + '0';
+
+	if (fill_to > 0) {
+		n = fill_to - i;
+		for (; i < DFP_BUFFER_SIZE && n > 0; i++, n--)
+			self->buffer[i] = '0';
+	}
 
 	n = i;
 	reverse(self->buffer, n);
@@ -62,18 +68,18 @@ int DFP_print_positive_integer(struct DFP *self, unsigned int value) {
 	return n;
 }
 
-int DFP_print_integer(struct DFP *self, unsigned int value) {
+int DFP_print_integer(struct DFP *self, unsigned int value, int fill_to) {
 	if (value == 0)
 		return DFP_putc(self, '0');
 	else
-		return DFP_print_positive_integer(self, value);
+		return DFP_print_positive_integer(self, value, fill_to);
 }
 
 int DFP_print_integer_signed(struct DFP *self, int value) {
 	int n = 0;
 
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
-	n += DFP_print_integer(self, value);
+	n += DFP_print_integer(self, value, -1);
 	return n;
 }
 
@@ -82,13 +88,13 @@ int DFP_print_long_integer(struct DFP *self, unsigned long long value) {
 
 	tmp1 = value / 10000000000;
 	value = value % 10000000000;
-	if (tmp1 > 0) n += DFP_print_integer(self, tmp1);
+	if (tmp1 > 0) n += DFP_print_integer(self, tmp1, -1);
 
 	tmp1 = value / 1000;
 	tmp2 = value % 1000;
-	if (tmp1 > 0) n += DFP_print_integer(self, tmp1);
+	if (tmp1 > 0) n += DFP_print_integer(self, tmp1, 7);
 
-	n += DFP_print_integer(self, tmp2);
+	n += DFP_print_integer(self, tmp2, 3);
 	return n;
 }
 
@@ -107,7 +113,7 @@ int DFP_print_p(struct DFP *self) {
 
 int DFP_print_u(struct DFP *self) {
 	self->fmt++;
-	return DFP_print_integer(self, va_arg(self->ap, unsigned int));
+	return DFP_print_integer(self, va_arg(self->ap, unsigned int), -1);
 }
 
 int DFP_print_d(struct DFP *self) {
@@ -171,7 +177,7 @@ int DFP_print_f(struct DFP *self) {
 	n++;
 
 	tmp = (int) ((value - ltmp) * 1000000);
-	n += DFP_print_integer(self, tmp);
+	n += DFP_print_integer(self, tmp, -1);
 
 	return n;
 }
@@ -233,9 +239,7 @@ int DFP_step(struct DFP *self) {
 /// The `va_copy` macro is from C99 standard, old compilers may not support it.
 #if !defined(va_copy) && defined(__va_copy)
 #define va_copy(dst, src) __va_copy(dst, src)
-#endif
-
-#if !defined(va_copy)
+#elif !defined(va_copy)
 //#define va_copy(dst, src) ((dst) = (src)) // this cause will some error on some compilers
 #define va_copy(dst, src) memcpy_((&dst), (&src), sizeof(va_list))
 #endif
