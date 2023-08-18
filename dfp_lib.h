@@ -7,8 +7,10 @@
 
 #include <stdarg.h>
 
+// clang-format off
 enum DFP_ReadState { DFP_STATE_NORMAL, DFP_STATE_FLAG, DFP_STATE_WIDTH };
 enum DFP_ErrorType { DFP_NO_ERROR, DFP_INVALID_FLAG, DFP_WIDTH_UNSUPPORTED };
+// clang-format on
 
 struct DFP {
 	char buffer[DFP_BUFFER_SIZE];
@@ -24,4 +26,3 @@ void DFP_PRINTF_INIT();
 void DFP_REGISTER_PUTS(int (*puts)(const char *));
 
 #endif
-

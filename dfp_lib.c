@@ -3,7 +3,12 @@
 
 #define ABS_NUM_AND_RET_SIGN(num) (((num) < 0) ? (num = -num, 1) : 0)
 #define ABS_NUM_AND_PUT_CHAR(self, value) (ABS_NUM_AND_RET_SIGN(value) ? dfp_putc(self, '-') : 0)
-#define swap_arr_by_index(arr, tmp, i1, i2) do { tmp = arr[i1]; arr[i1] = arr[i2]; arr[i2] = tmp; } while (0)
+#define swap_arr_by_index(arr, tmp, i1, i2) \
+	do {                                \
+		tmp = arr[i1];              \
+		arr[i1] = arr[i2];          \
+		arr[i2] = tmp;              \
+	} while (0)
 
 #ifndef FLOAT_PASSING_TYPE
 #define FLOAT_PASSING_TYPE double
@@ -26,9 +31,9 @@ void dfp_register_puts(struct DFP *self, int (*puts)(const char *)) {
 /// Unlike `putc` in standard C, `DFP_putc` returns 1
 int dfp_putc(struct DFP *self, int c) {
 	/// The following syntax is not supported on some platforms.
-	//char buf[2] = { c, '\0' };
+	// char buf[2] = { c, '\0' };
 
-	char buf[2] = { '\0' };
+	char buf[2] = {'\0'};
 	buf[0] = c;
 
 	self->puts(buf);
@@ -165,13 +170,13 @@ int dfp_print_f(struct DFP *self) {
 	self->fmt++;
 	value = va_arg(self->ap, FLOAT_PASSING_TYPE);
 
-	ltmp = (long long) value;
+	ltmp = (long long)value;
 	n += dfp_print_long_integer_signed(self, ltmp);
 
 	dfp_putc(self, '.');
 	n++;
 
-	tmp = (int) ((value - ltmp) * 1000000);
+	tmp = (int)((value - ltmp) * 1000000);
 	n += dfp_print_integer(self, tmp, -1);
 
 	return n;
@@ -203,15 +208,24 @@ int dfp_handle_flag(struct DFP *self) {
 	self->state = DFP_STATE_NORMAL;
 
 	switch (*self->fmt) {
-	case 'l': return dfp_print_l(self);
-	case 'u': return dfp_print_u(self);
-	case 'p': return dfp_print_p(self);
+	case 'l':
+		return dfp_print_l(self);
+	case 'u':
+		return dfp_print_u(self);
+	case 'p':
+		return dfp_print_p(self);
 	case 'i':
-	case 'd': return dfp_print_d(self);
-	case 'f': return dfp_print_f(self);
-	case 's': return dfp_print_s(self);
-	case 'c': return dfp_print_c(self);
-	default: self->error = DFP_INVALID_FLAG; return 0;
+	case 'd':
+		return dfp_print_d(self);
+	case 'f':
+		return dfp_print_f(self);
+	case 's':
+		return dfp_print_s(self);
+	case 'c':
+		return dfp_print_c(self);
+	default:
+		self->error = DFP_INVALID_FLAG;
+		return 0;
 	}
 }
 
@@ -219,10 +233,14 @@ int dfp_step(struct DFP *self) {
 	if (self->error != DFP_NO_ERROR) return 0;
 
 	switch (self->state) {
-	case DFP_STATE_NORMAL: return dfp_handle_normal(self);
-	case DFP_STATE_FLAG: return dfp_handle_flag(self);
+	case DFP_STATE_NORMAL:
+		return dfp_handle_normal(self);
+	case DFP_STATE_FLAG:
+		return dfp_handle_flag(self);
 	case DFP_STATE_WIDTH:
-	default: self->error = DFP_WIDTH_UNSUPPORTED; return 0;
+	default:
+		self->error = DFP_WIDTH_UNSUPPORTED;
+		return 0;
 	}
 }
 
@@ -276,4 +294,3 @@ void DFP_PRINTF_INIT() {
 void DFP_REGISTER_PUTS(int (*puts)(const char *)) {
 	dfp_register_puts(&my_dfp, puts);
 }
-
