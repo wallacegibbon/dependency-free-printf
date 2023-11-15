@@ -41,8 +41,7 @@ int dfp_putc(struct dfp *self, int c) {
 }
 
 static void reverse(char *buf, int size) {
-	int i, j;
-	char tmp;
+	int i, j, tmp;
 
 	for (i = 0, j = size / 2; i < j; i++)
 		swap_arr_by_index(buf, tmp, i, size - i - 1);
@@ -90,16 +89,18 @@ int dfp_print_integer(struct dfp *self, unsigned int value, int fill_to) {
 }
 
 int dfp_print_integer_signed(struct dfp *self, int value) {
-	int n = 0;
+	int n;
 
+	n = 0;
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
 	n += dfp_print_integer(self, value, -1);
 	return n;
 }
 
 int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
-	int tmp1, tmp2, n = 0;
+	int tmp1, tmp2, n;
 
+	n = 0;
 	tmp1 = value / 10000000000;
 	value = value % 10000000000;
 	if (tmp1 > 0)
@@ -119,8 +120,9 @@ int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
 }
 
 int dfp_print_long_integer_signed(struct dfp *self, long long value) {
-	int n = 0;
+	int n;
 
+	n = 0;
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
 	n += dfp_print_long_integer(self, value);
 	return n;
@@ -143,9 +145,9 @@ int dfp_print_d(struct dfp *self) {
 
 /// return 1 when s1 and s2 equals
 static int cmp(const char *s1, const char *s2, int size) {
-	int cmp_value = 0;
+	int cmp_value;
 
-	for (; !cmp_value && size; size--)
+	for (cmp_value = 0; !cmp_value && size; size--)
 		cmp_value = *s1++ - *s2++;
 
 	return !cmp_value && size == 0;
@@ -187,13 +189,14 @@ int dfp_print_l(struct dfp *self) {
 }
 
 int dfp_print_f(struct dfp *self) {
-	int tmp, n = 0;
 	long long ltmp;
+	int tmp, n;
 	float value;
 
 	self->fmt++;
 	value = va_arg(self->ap, FLOAT_PASSING_TYPE);
 
+	n = 0;
 	ltmp = (long long)value;
 	n += dfp_print_long_integer_signed(self, ltmp);
 
@@ -217,8 +220,9 @@ int dfp_print_c(struct dfp *self) {
 }
 
 int dfp_handle_normal(struct dfp *self) {
-	const char current_char = *self->fmt;
+	char current_char;
 
+	current_char = *self->fmt;
 	self->fmt++;
 	if (current_char == '%') {
 		self->state = DFP_STATE_FLAG;
@@ -278,17 +282,19 @@ int dfp_step(struct dfp *self) {
 #endif
 
 static void memcpy_(void *dest, void *src, size_t n) {
+	char *s, *d;
 	int i;
-	for (i = 0; i < n; i++)
-		*dest++ = *src++;
+	for (i = 0, s = src, d = dest; i < n; i++)
+		*d++ = *s++;
 }
 
 int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
-	int n = 0;
+	int n;
 
 	self->fmt = fmt;
 	va_copy(self->ap, ap);
 
+	n = 0;
 	while (*self->fmt != '\0' && self->error == DFP_NO_ERROR)
 		n += dfp_step(self);
 
