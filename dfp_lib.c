@@ -15,21 +15,21 @@
 #endif
 
 /// Using a global variable to avoid `malloc` (to support more platforms)
-static struct DFP my_dfp;
+static struct dfp default_dfp;
 
-void dfp_initialize(struct DFP *self) {
+void dfp_initialize(struct dfp *self) {
 	self->state = DFP_STATE_NORMAL;
 	self->error = DFP_NO_ERROR;
 	self->fmt = NULL;
 	self->puts = NULL;
 }
 
-void dfp_register_puts(struct DFP *self, int (*puts)(const char *)) {
+void dfp_register_puts(struct dfp *self, int (*puts)(const char *)) {
 	self->puts = puts;
 }
 
 /// Unlike `putc` in standard C, `DFP_putc` returns 1
-int dfp_putc(struct DFP *self, int c) {
+int dfp_putc(struct dfp *self, int c) {
 	/// The following syntax is not supported on some platforms.
 	// char buf[2] = { c, '\0' };
 
@@ -48,7 +48,7 @@ static void reverse(char *buf, int size) {
 		swap_arr_by_index(buf, tmp, i, size - i - 1);
 }
 
-int dfp_print_positive_integer(struct DFP *self, unsigned int value, int fill_to) {
+int dfp_print_positive_integer(struct dfp *self, unsigned int value, int fill_to) {
 	int i, n;
 
 	for (i = 0; i < DFP_BUFFER_SIZE && value > 0; value /= 10, i++)
@@ -68,14 +68,28 @@ int dfp_print_positive_integer(struct DFP *self, unsigned int value, int fill_to
 	return n;
 }
 
-int dfp_print_integer(struct DFP *self, unsigned int value, int fill_to) {
-	if (value == 0)
-		return dfp_putc(self, '0');
-	else
+/// `fill_to` == -1 means do not fill.
+int dfp_print_integer(struct dfp *self, unsigned int value, int fill_to) {
+	int i;
+
+	if (value < 0)
+		return 0;
+	if (value > 0)
 		return dfp_print_positive_integer(self, value, fill_to);
+
+	if (fill_to == -1)
+		return dfp_putc(self, '0');
+
+	for (i = 0; i < DFP_BUFFER_SIZE && i < fill_to; i++)
+		self->buffer[i] = '0';
+
+	self->buffer[i] = '\0';
+	self->puts(self->buffer);
+
+	return fill_to;
 }
 
-int dfp_print_integer_signed(struct DFP *self, int value) {
+int dfp_print_integer_signed(struct dfp *self, int value) {
 	int n = 0;
 
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
@@ -83,22 +97,28 @@ int dfp_print_integer_signed(struct DFP *self, int value) {
 	return n;
 }
 
-int dfp_print_long_integer(struct DFP *self, unsigned long long value) {
+int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
 	int tmp1, tmp2, n = 0;
 
 	tmp1 = value / 10000000000;
 	value = value % 10000000000;
-	if (tmp1 > 0) n += dfp_print_integer(self, tmp1, -1);
+	if (tmp1 > 0)
+		n += dfp_print_integer(self, tmp1, -1);
 
 	tmp1 = value / 1000;
 	tmp2 = value % 1000;
-	if (tmp1 > 0) n += dfp_print_integer(self, tmp1, 7);
+	if (tmp1 > 0)
+		n += dfp_print_integer(self, tmp1, 7);
 
-	n += dfp_print_integer(self, tmp2, 3);
+	if (n > 0)
+		n += dfp_print_integer(self, tmp2, 3);
+	else
+		n += dfp_print_integer(self, tmp2, -1);
+
 	return n;
 }
 
-int dfp_print_long_integer_signed(struct DFP *self, long long value) {
+int dfp_print_long_integer_signed(struct dfp *self, long long value) {
 	int n = 0;
 
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
@@ -106,17 +126,17 @@ int dfp_print_long_integer_signed(struct DFP *self, long long value) {
 	return n;
 }
 
-int dfp_print_p(struct DFP *self) {
+int dfp_print_p(struct dfp *self) {
 	self->fmt++;
 	return dfp_print_long_integer(self, va_arg(self->ap, unsigned long));
 }
 
-int dfp_print_u(struct DFP *self) {
+int dfp_print_u(struct dfp *self) {
 	self->fmt++;
 	return dfp_print_integer(self, va_arg(self->ap, unsigned int), -1);
 }
 
-int dfp_print_d(struct DFP *self) {
+int dfp_print_d(struct dfp *self) {
 	self->fmt++;
 	return dfp_print_integer_signed(self, va_arg(self->ap, int));
 }
@@ -131,38 +151,42 @@ static int cmp(const char *s1, const char *s2, int size) {
 	return !cmp_value && size == 0;
 }
 
-int dfp_print_lld(struct DFP *self) {
+int dfp_print_lld(struct dfp *self) {
 	self->fmt += 3;
 	return dfp_print_long_integer_signed(self, va_arg(self->ap, long long));
 }
 
-int dfp_print_llu(struct DFP *self) {
+int dfp_print_llu(struct dfp *self) {
 	self->fmt += 3;
 	return dfp_print_long_integer(self, va_arg(self->ap, unsigned long long));
 }
 
-int dfp_print_ld(struct DFP *self) {
+int dfp_print_ld(struct dfp *self) {
 	self->fmt += 2;
 	return dfp_print_long_integer_signed(self, va_arg(self->ap, long));
 }
 
-int dfp_print_lu(struct DFP *self) {
+int dfp_print_lu(struct dfp *self) {
 	self->fmt += 2;
 	return dfp_print_long_integer(self, va_arg(self->ap, unsigned long));
 }
 
-int dfp_print_l(struct DFP *self) {
-	if (cmp(self->fmt, "lld", 3)) return dfp_print_lld(self);
-	if (cmp(self->fmt, "llu", 3)) return dfp_print_llu(self);
-	if (cmp(self->fmt, "ld", 2)) return dfp_print_ld(self);
-	if (cmp(self->fmt, "lu", 2)) return dfp_print_lu(self);
+int dfp_print_l(struct dfp *self) {
+	if (cmp(self->fmt, "lld", 3))
+		return dfp_print_lld(self);
+	if (cmp(self->fmt, "llu", 3))
+		return dfp_print_llu(self);
+	if (cmp(self->fmt, "ld", 2))
+		return dfp_print_ld(self);
+	if (cmp(self->fmt, "lu", 2))
+		return dfp_print_lu(self);
 
 	self->error = DFP_INVALID_FLAG;
 	self->fmt++;
 	return 0;
 }
 
-int dfp_print_f(struct DFP *self) {
+int dfp_print_f(struct dfp *self) {
 	int tmp, n = 0;
 	long long ltmp;
 	float value;
@@ -182,17 +206,17 @@ int dfp_print_f(struct DFP *self) {
 	return n;
 }
 
-int dfp_print_s(struct DFP *self) {
+int dfp_print_s(struct dfp *self) {
 	self->fmt++;
 	return self->puts(va_arg(self->ap, const char *));
 }
 
-int dfp_print_c(struct DFP *self) {
+int dfp_print_c(struct dfp *self) {
 	self->fmt++;
 	return dfp_putc(self, va_arg(self->ap, int));
 }
 
-int dfp_handle_normal(struct DFP *self) {
+int dfp_handle_normal(struct dfp *self) {
 	const char current_char = *self->fmt;
 
 	self->fmt++;
@@ -204,7 +228,7 @@ int dfp_handle_normal(struct DFP *self) {
 	return dfp_putc(self, current_char);
 }
 
-int dfp_handle_flag(struct DFP *self) {
+int dfp_handle_flag(struct dfp *self) {
 	self->state = DFP_STATE_NORMAL;
 
 	switch (*self->fmt) {
@@ -229,8 +253,9 @@ int dfp_handle_flag(struct DFP *self) {
 	}
 }
 
-int dfp_step(struct DFP *self) {
-	if (self->error != DFP_NO_ERROR) return 0;
+int dfp_step(struct dfp *self) {
+	if (self->error != DFP_NO_ERROR)
+		return 0;
 
 	switch (self->state) {
 	case DFP_STATE_NORMAL:
@@ -259,7 +284,7 @@ static void memcpy_(void *dest, void *src, size_t n) {
 		*d = *s;
 }
 
-int dfp_vprintf(struct DFP *self, const char *fmt, va_list ap) {
+int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
 	int n = 0;
 
 	self->fmt = fmt;
@@ -278,8 +303,8 @@ int DFP_PRINTF(const char *fmt, ...) {
 
 	va_start(args, fmt);
 
-	ret = dfp_vprintf(&my_dfp, fmt, args);
-	if (my_dfp.error != DFP_NO_ERROR)
+	ret = dfp_vprintf(&default_dfp, fmt, args);
+	if (default_dfp.error != DFP_NO_ERROR)
 		ret = -1;
 
 	va_end(args);
@@ -288,9 +313,9 @@ int DFP_PRINTF(const char *fmt, ...) {
 }
 
 void DFP_PRINTF_INIT() {
-	dfp_initialize(&my_dfp);
+	dfp_initialize(&default_dfp);
 }
 
 void DFP_REGISTER_PUTS(int (*puts)(const char *)) {
-	dfp_register_puts(&my_dfp, puts);
+	dfp_register_puts(&default_dfp, puts);
 }

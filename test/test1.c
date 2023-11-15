@@ -34,5 +34,8 @@ int main(int argc, const char **argv) {
 	printf("<*> %p\t(%lu) %c\n", &c, (unsigned long)&c, '!');
 	DFP_PRINTF("<*> %p\t(%lu) %c\n", &c, &c, '!');
 
+	printf("long value: %lu\n", 140723709965000);
+	DFP_PRINTF("long value: %lu\n", 140723709965000);
+
 	return 0;
 }
