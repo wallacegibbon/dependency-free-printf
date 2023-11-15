@@ -278,10 +278,9 @@ int dfp_step(struct dfp *self) {
 #endif
 
 static void memcpy_(void *dest, void *src, size_t n) {
-	char *d = dest, *s = src;
 	int i;
 	for (i = 0; i < n; i++)
-		*d = *s;
+		*dest++ = *src++;
 }
 
 int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
