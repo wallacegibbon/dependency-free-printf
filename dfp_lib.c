@@ -98,21 +98,29 @@ int dfp_print_integer_signed(struct dfp *self, int value) {
 }
 
 int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
-	int tmp1, tmp2, n;
+	unsigned int tmp1, tmp2, n;
 
 	n = 0;
+	/// 10000000000 > 2**32, tmp1 will fit into a 32bit integer.
 	tmp1 = value / 10000000000;
 	value = value % 10000000000;
 	if (tmp1 > 0)
 		n += dfp_print_integer(self, tmp1, -1);
 
-	tmp1 = value / 1000;
-	tmp2 = value % 1000;
-	if (tmp1 > 0)
-		n += dfp_print_integer(self, tmp1, 7);
+	/// The 10 here can also be 100, 1000, 10000... just to make the value fit into tmp1.
+	/// But if you change it, you need to change the 9, 1 in the following dfp_print_integer, too.
+	tmp1 = value / 10;
+	tmp2 = value % 10;
+	if (n > 0)
+		n += dfp_print_integer(self, tmp1, 9);
+	else if (tmp1 > 0)
+		n += dfp_print_integer(self, tmp1, -1);
+	else
+		/// when n == 0 && tmp1 == 0, do not print anything.
+		n;
 
 	if (n > 0)
-		n += dfp_print_integer(self, tmp2, 3);
+		n += dfp_print_integer(self, tmp2, 1);
 	else
 		n += dfp_print_integer(self, tmp2, -1);
 
@@ -277,7 +285,7 @@ int dfp_step(struct dfp *self) {
 #if !defined(va_copy) && defined(__va_copy)
 #define va_copy(dst, src) __va_copy(dst, src)
 #elif !defined(va_copy)
-//#define va_copy(dst, src) ((dst) = (src)) // this cause will some error on some compilers
+//#define va_copy(dst, src) ((dst) = (src)) // this cause some errors on some compilers
 #define va_copy(dst, src) memcpy_((&dst), (&src), sizeof(va_list))
 #endif
 
