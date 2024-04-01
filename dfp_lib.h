@@ -8,6 +8,8 @@
 #define DFP_BUFFER_SIZE 32
 #endif
 
+typedef int (*dfp_puts_fn)(const char *);
+
 // clang-format off
 enum dfp_read_state { DFP_STATE_NORMAL, DFP_STATE_FLAG, DFP_STATE_WIDTH };
 enum dfp_error_type { DFP_NO_ERROR, DFP_INVALID_FLAG, DFP_WIDTH_UNSUPPORTED };
@@ -22,9 +24,12 @@ struct dfp {
 	int (*puts)(const char *s);
 };
 
-int __dfp_printf(const char *fmt, ...);
-int __dfp_printf_init();
+int dfp_initialize(struct dfp *self);
+int dfp_register_puts(struct dfp *self, int (*puts)(const char *));
+int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap);
 
-int __dfp_register_puts(int (*puts)(const char *));
+int __dfp_printf_init();
+int __dfp_register_puts(dfp_puts_fn fn);
+int __dfp_printf(const char *fmt, ...);
 
 #endif

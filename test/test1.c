@@ -1,40 +1,40 @@
 #include "../dfp_lib.h"
-#include <stdint.h>
+#include <assert.h>
 #include <stdio.h>
 
 int my_puts(const char *s);
 
 int main(int argc, const char **argv) {
-	int a;
-	long long b;
-	float c;
+	int tmp;
+	long long tmp_ll;
+	float tmp_f;
 
-	__dfp_printf_init();
-	__dfp_register_puts(my_puts);
+	assert(!__dfp_printf_init());
+	assert(!__dfp_register_puts(my_puts));
 
-	a = printf("hello, world %u %llu ~", 0, (unsigned long long)10);
-	printf("\tsize: %d\n", a);
+	tmp = printf("string:\t\t\thello, world %u %llu ~", 0, (unsigned long long)10);
+	printf("\tsize: %d\n", tmp);
 
-	a = __dfp_printf("hello, world %u %llu ~", 0, (unsigned long long)10);
-	__dfp_printf("\tsize: %d\n", a);
+	tmp = __dfp_printf("string:\t\t\thello, world %u %llu ~", 0, (unsigned long long)10);
+	__dfp_printf("\tsize: %d\n", tmp);
 
 	/// 0x1234567812345678 == 1311768465173141112
-	b = 0x1234567812345678;
-	a = printf("%d, %lld,\t", (int)b, b);
-	printf("size: %d\n", a);
+	tmp_ll = 0x1234567812345678;
 
-	a = __dfp_printf("%d, %lld,\t", (int)b, b);
-	__dfp_printf("size: %d\n", a);
+	tmp = printf("long long:\t\t%d, %lld,\t", (int)tmp_ll, tmp_ll);
+	printf("size: %d\n", tmp);
 
-	c = 3.1415926;
-	printf("%f\n", c);
-	__dfp_printf("%f\n", c);
+	tmp = __dfp_printf("long long:\t\t%d, %lld,\t", (int)tmp_ll, tmp_ll);
+	__dfp_printf("size: %d\n", tmp);
 
-	printf("<*> %p\t(%llu) %c\n", &c, (uintptr_t)&c, '!');
-	__dfp_printf("<*> %p\t(%lu) %c\n", &c, &c, '!');
+	tmp_f = 3.1415926;
 
-	printf("long value: %llu\n", 140723709965000LU);
-	__dfp_printf("long value: %llu\n", 140723709965000LU);
+	printf("float:\t\t\t%f\n", tmp_f);
+	__dfp_printf("float:\t\t\t%f\n", tmp_f);
+
+	/// Special value to test the `0`s.
+	printf("special long long:\t%llu\n", 140723709965000LU);
+	__dfp_printf("special long long:\t%llu\n", 140723709965000LU);
 
 	return 0;
 }
