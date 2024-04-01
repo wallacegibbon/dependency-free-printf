@@ -1,14 +1,9 @@
 #include "dfp_lib.h"
 #include <stddef.h>
+#include <stdint.h>
 
 #define ABS_NUM_AND_RET_SIGN(num) (((num) < 0) ? (num = -num, 1) : 0)
 #define ABS_NUM_AND_PUT_CHAR(self, value) (ABS_NUM_AND_RET_SIGN(value) ? dfp_putc(self, '-') : 0)
-#define swap_arr_by_index(arr, tmp, i1, i2) \
-	do {                                \
-		tmp = arr[i1];              \
-		arr[i1] = arr[i2];          \
-		arr[i2] = tmp;              \
-	} while (0)
 
 #ifndef FLOAT_PASSING_TYPE
 #define FLOAT_PASSING_TYPE double
@@ -17,6 +12,21 @@
 /// Using a global variable to avoid `malloc` (to support more platforms)
 static struct dfp default_dfp;
 
+static void __memcpy(void *dest, void *src, size_t n) {
+	char *s, *d;
+	int i;
+	for (i = 0, s = src, d = dest; i < n; i++)
+		*d++ = *s++;
+}
+
+static inline int swap_arr_by_index(void *arr, int elem_size, int i1, int i2) {
+	uint8_t tmp[elem_size];
+	__memcpy(tmp, arr + i1 * elem_size, elem_size);
+	__memcpy(arr + i1 * elem_size, arr + i2 * elem_size, elem_size);
+	__memcpy(arr + i2 * elem_size, tmp, elem_size);
+	return 0;
+}
+
 void dfp_initialize(struct dfp *self) {
 	self->state = DFP_STATE_NORMAL;
 	self->error = DFP_NO_ERROR;
@@ -24,18 +34,16 @@ void dfp_initialize(struct dfp *self) {
 	self->puts = NULL;
 }
 
-void dfp_register_puts(struct dfp *self, int (*puts)(const char *)) {
+int dfp_register_puts(struct dfp *self, int (*puts)(const char *)) {
 	self->puts = puts;
+	return 0;
 }
 
 /// Unlike `putc` in standard C, `DFP_putc` returns 1
 int dfp_putc(struct dfp *self, int c) {
-	/// The following syntax is not supported on some platforms.
-	// char buf[2] = { c, '\0' };
-
-	char buf[2] = {'\0'};
+	char buf[2];
 	buf[0] = c;
-
+	buf[1] = '\0';
 	self->puts(buf);
 	return 1;
 }
@@ -44,17 +52,17 @@ static void reverse(char *buf, int size) {
 	int i, j, tmp;
 
 	for (i = 0, j = size / 2; i < j; i++)
-		swap_arr_by_index(buf, tmp, i, size - i - 1);
+		swap_arr_by_index(buf, 1, i, size - i - 1);
 }
 
-int dfp_print_positive_integer(struct dfp *self, unsigned int value, int fill_to) {
+int dfp_print_positive_integer(struct dfp *self, unsigned int value, int full_width) {
 	int i, n;
 
 	for (i = 0; i < DFP_BUFFER_SIZE && value > 0; value /= 10, i++)
 		self->buffer[i] = value % 10 + '0';
 
-	if (fill_to > 0) {
-		n = fill_to - i;
+	if (full_width > i) {
+		n = full_width - i;
 		for (; i < DFP_BUFFER_SIZE && n > 0; i++, n--)
 			self->buffer[i] = '0';
 	}
@@ -67,25 +75,24 @@ int dfp_print_positive_integer(struct dfp *self, unsigned int value, int fill_to
 	return n;
 }
 
-/// `fill_to` == -1 means do not fill.
-int dfp_print_integer(struct dfp *self, unsigned int value, int fill_to) {
+int dfp_print_integer(struct dfp *self, unsigned int value, int full_width) {
 	int i;
 
 	if (value < 0)
 		return 0;
 	if (value > 0)
-		return dfp_print_positive_integer(self, value, fill_to);
+		return dfp_print_positive_integer(self, value, full_width);
 
-	if (fill_to == -1)
+	if (full_width == 0)
 		return dfp_putc(self, '0');
 
-	for (i = 0; i < DFP_BUFFER_SIZE && i < fill_to; i++)
+	for (i = 0; i < DFP_BUFFER_SIZE && i < full_width; i++)
 		self->buffer[i] = '0';
 
 	self->buffer[i] = '\0';
 	self->puts(self->buffer);
 
-	return fill_to;
+	return full_width;
 }
 
 int dfp_print_integer_signed(struct dfp *self, int value) {
@@ -93,7 +100,7 @@ int dfp_print_integer_signed(struct dfp *self, int value) {
 
 	n = 0;
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
-	n += dfp_print_integer(self, value, -1);
+	n += dfp_print_integer(self, value, 0);
 	return n;
 }
 
@@ -105,7 +112,7 @@ int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
 	tmp1 = value / 10000000000;
 	value = value % 10000000000;
 	if (tmp1 > 0)
-		n += dfp_print_integer(self, tmp1, -1);
+		n += dfp_print_integer(self, tmp1, 0);
 
 	/// The 10 here can also be 100, 1000, 10000... just to make the value fit into tmp1.
 	/// But if you change it, you need to change the 9, 1 in the following dfp_print_integer, too.
@@ -114,15 +121,15 @@ int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
 	if (n > 0)
 		n += dfp_print_integer(self, tmp1, 9);
 	else if (tmp1 > 0)
-		n += dfp_print_integer(self, tmp1, -1);
+		n += dfp_print_integer(self, tmp1, 0);
 	else
 		/// when n == 0 && tmp1 == 0, do not print anything.
-		n;
+		(void)n;
 
 	if (n > 0)
 		n += dfp_print_integer(self, tmp2, 1);
 	else
-		n += dfp_print_integer(self, tmp2, -1);
+		n += dfp_print_integer(self, tmp2, 0);
 
 	return n;
 }
@@ -143,7 +150,7 @@ int dfp_print_p(struct dfp *self) {
 
 int dfp_print_u(struct dfp *self) {
 	self->fmt++;
-	return dfp_print_integer(self, va_arg(self->ap, unsigned int), -1);
+	return dfp_print_integer(self, va_arg(self->ap, unsigned int), 0);
 }
 
 int dfp_print_d(struct dfp *self) {
@@ -212,7 +219,7 @@ int dfp_print_f(struct dfp *self) {
 	n++;
 
 	tmp = (int)((value - ltmp) * 1000000);
-	n += dfp_print_integer(self, tmp, -1);
+	n += dfp_print_integer(self, tmp, 0);
 
 	return n;
 }
@@ -285,16 +292,9 @@ int dfp_step(struct dfp *self) {
 #if !defined(va_copy) && defined(__va_copy)
 #define va_copy(dst, src) __va_copy(dst, src)
 #elif !defined(va_copy)
-//#define va_copy(dst, src) ((dst) = (src)) // this cause some errors on some compilers
+// #define va_copy(dst, src) ((dst) = (src)) // this cause some errors on some compilers
 #define va_copy(dst, src) memcpy_((&dst), (&src), sizeof(va_list))
 #endif
-
-static void memcpy_(void *dest, void *src, size_t n) {
-	char *s, *d;
-	int i;
-	for (i = 0, s = src, d = dest; i < n; i++)
-		*d++ = *s++;
-}
 
 int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
 	int n;
@@ -310,7 +310,7 @@ int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
 }
 
 /// This is the function to be used by user.
-int DFP_PRINTF(const char *fmt, ...) {
+int __dfp_printf(const char *fmt, ...) {
 	va_list args;
 	int ret;
 
@@ -325,10 +325,14 @@ int DFP_PRINTF(const char *fmt, ...) {
 	return ret;
 }
 
-void DFP_PRINTF_INIT() {
+int __dfp_printf_init() {
 	dfp_initialize(&default_dfp);
+	return 0;
 }
 
-void DFP_REGISTER_PUTS(int (*puts)(const char *)) {
-	dfp_register_puts(&default_dfp, puts);
+int __dfp_register_puts(int (*puts)(const char *)) {
+	if (dfp_register_puts(&default_dfp, puts))
+		return 1;
+	else
+		return 0;
 }

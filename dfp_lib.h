@@ -2,6 +2,7 @@
 #define __DFP_LIB_H
 
 #include <stdarg.h>
+#include <stdint.h>
 
 #ifndef DFP_BUFFER_SIZE
 #define DFP_BUFFER_SIZE 32
@@ -21,8 +22,9 @@ struct dfp {
 	int (*puts)(const char *s);
 };
 
-int DFP_PRINTF(const char *fmt, ...);
-void DFP_PRINTF_INIT();
-void DFP_REGISTER_PUTS(int (*puts)(const char *));
+int __dfp_printf(const char *fmt, ...);
+int __dfp_printf_init();
+
+int __dfp_register_puts(int (*puts)(const char *));
 
 #endif
