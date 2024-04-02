@@ -30,5 +30,6 @@ struct fmt_parser {
 
 int fmt_parser_init(struct fmt_parser *self, const char *fmt);
 int fmt_parser_step(struct fmt_parser *self, struct fmt_parser_chunk *result);
+int fmt_parser_finished(struct fmt_parser *self);
 
 #endif

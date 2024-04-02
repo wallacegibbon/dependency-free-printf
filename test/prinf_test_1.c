@@ -12,11 +12,11 @@ int main() {
 	assert(!DFP_PRINTF_INIT(my_puts));
 
 	tmp = printf("string:\t\t\thello, world %u %llu %%\n", 0, (unsigned long long)10);
-	// printf("\tsize: %d\n", tmp);
+	// printf("size: %d\n", tmp);
 	assert(tmp == 30);
 
 	tmp = DFP_PRINTF("string:\t\t\thello, world %u %llu %%\n", 0, (unsigned long long)10);
-	// DFP_PRINTF("\tsize: %d\n", tmp);
+	// DFP_PRINTF("size: %d\n", tmp);
 	assert(tmp == 30);
 
 	/// 0x1234567812345678 == 1311768465173141112
@@ -40,6 +40,9 @@ int main() {
 	/// Special value to test the `0`s.
 	printf("special long long:\t%llu\n", 140723709965000LU);
 	DFP_PRINTF("special long long:\t%llu\n", 140723709965000LU);
+
+	/// invalid placeholder
+	assert(DFP_PRINTF("%t") == -1);
 
 	return 0;
 }

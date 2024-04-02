@@ -46,9 +46,8 @@ static void reverse_arr(char *buf, int size) {
 
 /// Unlike `putc` in standard C, `DFP_putc` returns 1
 static int dfp_putc(struct dfp *self, int c) {
-	char buf[2];
+	char buf[2] = {0};
 	buf[0] = c;
-	buf[1] = '\0';
 	self->puts(buf);
 	return 1;
 }
@@ -79,18 +78,16 @@ static int dfp_print_integer(struct dfp *self, unsigned int value, int full_widt
 }
 
 static int dfp_print_integer_signed(struct dfp *self, int value) {
-	int n;
-
-	n = 0;
+	int n = 0;
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
 	n += dfp_print_integer(self, value, 0);
 	return n;
 }
 
 static int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
-	uint32_t tmp, n;
+	uint32_t tmp;
+	uint32_t n = 0;
 
-	n = 0;
 	/// tmp1 will fit into a 32bit integer since 10000000000 > 2**32.
 	tmp = value / 10000000000;
 	value = value % 10000000000;
@@ -117,19 +114,17 @@ static int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
 }
 
 static int dfp_print_long_integer_signed(struct dfp *self, long long value) {
-	int n;
-
-	n = 0;
+	int n = 0;
 	n += ABS_NUM_AND_PUT_CHAR(self, value);
 	n += dfp_print_long_integer(self, value);
 	return n;
 }
 
 static int dfp_print_float(struct dfp *self, FLOAT_PASSING_TYPE value) {
-	int tmp, n;
+	int n = 0;
+	int tmp;
 	long long tmp_l;
 
-	n = 0;
 	tmp_l = (long long)value;
 	n += dfp_print_long_integer_signed(self, tmp_l);
 
@@ -142,9 +137,7 @@ static int dfp_print_float(struct dfp *self, FLOAT_PASSING_TYPE value) {
 	return n;
 }
 
-static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk) {
-	if (self->error)
-		return 0;
+static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error) {
 	if (chunk->type == FMT_CHAR)
 		return dfp_putc(self, chunk->c);
 	if (chunk->type == FMT_PLACEHOLDER_C)
@@ -168,23 +161,24 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk) {
 	if (chunk->type == FMT_PLACEHOLDER_S)
 		return self->puts(va_arg(self->ap, const char *));
 
-	self->error = 1;
+	*error = 1;
 	return 0;
 }
 
 int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
 	struct fmt_parser_chunk chunk;
-	int n;
+	int n = 0;
+	int error = 0;
 
 	va_copy(self->ap, ap);
 	if (fmt_parser_init(&self->parser, fmt))
 		return -1;
 
-	n = 0;
-	while (!fmt_parser_step(&self->parser, &chunk) && !self->error)
-		n += dfp_step(self, &chunk);
+	while (!fmt_parser_step(&self->parser, &chunk) && !error)
+		n += dfp_step(self, &chunk, &error);
 
-	if (self->error)
+	/// dfp error (caused by `dfp_step`) or parser error (unfinished fmt)
+	if (error || !fmt_parser_finished(&self->parser))
 		n = -1;
 
 	va_end(self->ap);
@@ -194,7 +188,6 @@ int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
 
 int dfp_init(struct dfp *self, dfp_puts_fn puts) {
 	self->puts = puts;
-	self->error = 0;
 	return 0;
 }
 

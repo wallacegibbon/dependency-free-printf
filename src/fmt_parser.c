@@ -60,7 +60,7 @@ static int fmt_parser_normal_char(struct fmt_parser *self, struct fmt_parser_chu
 }
 
 int fmt_parser_step(struct fmt_parser *self, struct fmt_parser_chunk *result) {
-	if (*self->fmt == '\0')
+	if (fmt_parser_finished(self))
 		return 1;
 
 	if (*self->fmt != '%')
@@ -73,6 +73,10 @@ int fmt_parser_step(struct fmt_parser *self, struct fmt_parser_chunk *result) {
 		return fmt_parser_normal_char(self, result);
 
 	return fmt_parser_placeholder(self, result);
+}
+
+int fmt_parser_finished(struct fmt_parser *self) {
+	return *self->fmt == '\0';
 }
 
 int fmt_parser_init(struct fmt_parser *self, const char *fmt) {

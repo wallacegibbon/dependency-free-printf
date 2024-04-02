@@ -11,11 +11,10 @@
 typedef int (*dfp_puts_fn)(const char *);
 
 struct dfp {
-	char buffer[DFP_BUFFER_SIZE + 1];
 	struct fmt_parser parser;
-	va_list ap;
-	int error;
 	int (*puts)(const char *s);
+	va_list ap;
+	char buffer[DFP_BUFFER_SIZE + 1];
 };
 
 int dfp_init(struct dfp *self, dfp_puts_fn puts);
