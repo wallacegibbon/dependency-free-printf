@@ -1,4 +1,5 @@
 mkdir -p build
+
 gcc -c -o build/dfp_lib.o dfp_lib.c
 
 compile_and_run_test() {
