@@ -187,6 +187,8 @@ int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
 	if (self->error)
 		n = -1;
 
+	va_end(self->ap);
+
 	return n;
 }
 
