@@ -11,7 +11,7 @@
 typedef int (*dfp_puts_fn)(const char *);
 
 struct dfp {
-	char buffer[DFP_BUFFER_SIZE];
+	char buffer[DFP_BUFFER_SIZE + 1];
 	struct fmt_parser parser;
 	va_list ap;
 	int error;

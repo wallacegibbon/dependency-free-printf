@@ -37,7 +37,7 @@ static inline int swap_arr_by_index(void *arr, int elem_size, int i1, int i2) {
 }
 
 static void reverse_arr(char *buf, int size) {
-	int i, middle, tmp;
+	int i, middle;
 
 	middle = size / 2;
 	for (i = 0; i < middle; i++)
@@ -53,44 +53,29 @@ static int dfp_putc(struct dfp *self, int c) {
 	return 1;
 }
 
-static int dfp_print_positive_integer(struct dfp *self, unsigned int value, int full_width) {
-	int i, n;
+static int dfp_print_integer(struct dfp *self, unsigned int value, int full_width) {
+	int i, j;
 
-	for (i = 0; i < DFP_BUFFER_SIZE && value > 0; value /= 10, i++)
-		self->buffer[i] = value % 10 + '0';
-
-	if (full_width > i) {
-		n = full_width - i;
-		for (; i < DFP_BUFFER_SIZE && n > 0; i++, n--)
-			self->buffer[i] = '0';
+	if (value == 0 && full_width == 0) {
+		dfp_putc(self, '0');
+		return 1;
 	}
 
-	n = i;
-	reverse_arr(self->buffer, n);
-	self->buffer[n] = '\0';
+	for (i = 0; i < DFP_BUFFER_SIZE && value > 0; i++) {
+		self->buffer[i] = value % 10 + '0';
+		value /= 10;
+	}
 
-	self->puts(self->buffer);
-	return n;
-}
+	if (full_width > i) {
+		for (j = full_width - i; j > 0 && i < DFP_BUFFER_SIZE; j--)
+			self->buffer[i++] = '0';
+	}
 
-static int dfp_print_integer(struct dfp *self, unsigned int value, int full_width) {
-	int i;
-
-	if (value < 0)
-		return 0;
-	if (value > 0)
-		return dfp_print_positive_integer(self, value, full_width);
-
-	if (full_width == 0)
-		return dfp_putc(self, '0');
-
-	for (i = 0; i < DFP_BUFFER_SIZE && i < full_width; i++)
-		self->buffer[i] = '0';
-
+	reverse_arr(self->buffer, i);
 	self->buffer[i] = '\0';
-	self->puts(self->buffer);
 
-	return full_width;
+	self->puts(self->buffer);
+	return i;
 }
 
 static int dfp_print_integer_signed(struct dfp *self, int value) {
@@ -121,7 +106,6 @@ static int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
 	else if (tmp > 0)
 		n += dfp_print_integer(self, tmp, 0);
 	else
-		/// when n == 0 && tmp1 == 0, do not print anything.
 		(void)n;
 
 	if (n > 0)
