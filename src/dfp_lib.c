@@ -2,20 +2,16 @@
 #include "fmt_parser.h"
 #include <stdint.h>
 
-/// The `va_copy` macro is from C99 standard, old compilers may not support it.
+/// According to <https://en.cppreference.com/w/c/language/conversion>:
+/// Each argument of integer type undergoes integer promotion (see below),
+/// and each argument of type float is implicitly converted to the type double.
+
+/// Polyfill: The `va_copy` macro is from C99 standard, old compilers may not support it.
 #if !defined(va_copy) && defined(__va_copy)
 #define va_copy(dst, src) __va_copy(dst, src)
 #elif !defined(va_copy)
 // #define va_copy(dst, src) ((dst) = (src)) // this cause errors on some compilers
 #define va_copy(dst, src) memcpy_((&dst), (&src), sizeof(va_list))
-#endif
-
-#ifndef FLOAT_PASSING_TYPE
-#define FLOAT_PASSING_TYPE double
-#endif
-
-#ifndef CHAR_PASSING_TYPE
-#define CHAR_PASSING_TYPE int
 #endif
 
 /// Using a global variable to avoid `malloc` (to support more platforms)
@@ -98,7 +94,7 @@ static int dfp_print_int_signed(struct dfp *self, long long value) {
 }
 
 /// Caution: This is a dirty implementation. Value bigger than 2**64 will be wrong.
-static int dfp_print_float(struct dfp *self, FLOAT_PASSING_TYPE value) {
+static int dfp_print_float(struct dfp *self, double value) {
 	long long tmp;
 	int n = 0;
 
@@ -118,7 +114,7 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error
 	if (chunk->type == FMT_CHAR)
 		return dfp_putc(self, chunk->c);
 	if (chunk->type == FMT_PLACEHOLDER_C)
-		return dfp_putc(self, va_arg(self->args, CHAR_PASSING_TYPE));
+		return dfp_putc(self, va_arg(self->args, int));
 	if (chunk->type == FMT_PLACEHOLDER_LLD)
 		return dfp_print_int_signed(self, va_arg(self->args, long long));
 	if (chunk->type == FMT_PLACEHOLDER_LD)
@@ -134,7 +130,7 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error
 	if (chunk->type == FMT_PLACEHOLDER_P)
 		return dfp_print_int(self, va_arg(self->args, uintptr_t));
 	if (chunk->type == FMT_PLACEHOLDER_F)
-		return dfp_print_float(self, va_arg(self->args, FLOAT_PASSING_TYPE));
+		return dfp_print_float(self, va_arg(self->args, double));
 	if (chunk->type == FMT_PLACEHOLDER_S)
 		return self->puts(va_arg(self->args, const char *));
 
