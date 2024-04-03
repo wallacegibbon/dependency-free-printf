@@ -1,14 +1,6 @@
 #include "dfp_lib.h"
 #include "fmt_parser.h"
-#include <stddef.h>
 #include <stdint.h>
-
-#define ABS_NUM_AND_RET_SIGN(num) (((num) < 0) ? (num = -num, 1) : 0)
-#define ABS_NUM_AND_PUT_CHAR(self, value) (ABS_NUM_AND_RET_SIGN(value) ? dfp_putc(self, '-') : 0)
-
-#ifndef FLOAT_PASSING_TYPE
-#define FLOAT_PASSING_TYPE double
-#endif
 
 /// The `va_copy` macro is from C99 standard, old compilers may not support it.
 #if !defined(va_copy) && defined(__va_copy)
@@ -18,12 +10,20 @@
 #define va_copy(dst, src) memcpy_((&dst), (&src), sizeof(va_list))
 #endif
 
+#ifndef FLOAT_PASSING_TYPE
+#define FLOAT_PASSING_TYPE double
+#endif
+
+#ifndef CHAR_PASSING_TYPE
+#define CHAR_PASSING_TYPE int
+#endif
+
 /// Using a global variable to avoid `malloc` (to support more platforms)
 static struct dfp default_dfp;
 
-static void memcpy_n(void *dest, void *src, size_t n) {
+static void memcpy_n(void *dest, void *src, int n) {
 	char *s, *d;
-	size_t i;
+	int i;
 	for (i = 0, s = src, d = dest; i < n; i++)
 		*d++ = *s++;
 }
@@ -52,24 +52,25 @@ static int dfp_putc(struct dfp *self, int c) {
 	return 1;
 }
 
-static int dfp_print_integer(struct dfp *self, uint32_t value, int full_width) {
-	/// The decimal string of 2**32 have 10 characters, so 16B is enough for any integer.
-#define UINT32_BUFFER_SIZE 16
-	char buffer[UINT32_BUFFER_SIZE];
+static int dfp_print_int_with_width(struct dfp *self, unsigned long long value, int width) {
+	/// The decimal string of 2**64 have 20 characters, so 32B is enough for any 64-bit integer.
+	/// And integer won't be bigger than 64-bit in the near future.
+#define INT_BUFFER_SIZE 32
+	char buffer[INT_BUFFER_SIZE];
 	int i, j;
 
-	if (value == 0 && full_width == 0) {
+	if (value == 0 && width == 0) {
 		dfp_putc(self, '0');
 		return 1;
 	}
 
-	for (i = 0; i < UINT32_BUFFER_SIZE - 1 && value > 0; i++) {
+	for (i = 0; i < INT_BUFFER_SIZE - 1 && value > 0; i++) {
 		buffer[i] = value % 10 + '0';
 		value /= 10;
 	}
 
-	if (full_width > i) {
-		for (j = full_width - i; j > 0 && i < UINT32_BUFFER_SIZE - 1; j--)
+	if (width > i) {
+		for (j = width - i; j > 0 && i < INT_BUFFER_SIZE - 1; j--)
 			buffer[i++] = '0';
 	}
 
@@ -80,62 +81,35 @@ static int dfp_print_integer(struct dfp *self, uint32_t value, int full_width) {
 	return i;
 }
 
-static int dfp_print_integer_signed(struct dfp *self, int value) {
+static int dfp_print_int(struct dfp *self, unsigned long long value) {
+	return dfp_print_int_with_width(self, value, 0);
+}
+
+static int dfp_print_int_signed(struct dfp *self, long long value) {
 	int n = 0;
-	n += ABS_NUM_AND_PUT_CHAR(self, value);
-	n += dfp_print_integer(self, value, 0);
+
+	if (value < 0) {
+		value = -value;
+		n += dfp_putc(self, '-');
+	}
+
+	n += dfp_print_int(self, value);
 	return n;
 }
 
-static int dfp_print_long_integer(struct dfp *self, unsigned long long value) {
-	uint32_t tmp;
-	uint32_t n = 0;
-
-	/// tmp1 will fit into a 32bit integer since 10000000000 > 2**32.
-	tmp = value / 10000000000;
-	value = value % 10000000000;
-	if (tmp > 0)
-		n += dfp_print_integer(self, tmp, 0);
-
-	/// The 10 here can also be 100, 1000, 10000... just to make the value fit into tmp1.
-	/// But if you change it, you need to change the 9, 1 in the following dfp_print_integer, too.
-	tmp = value / 10;
-	value = value % 10;
-	if (n > 0)
-		n += dfp_print_integer(self, tmp, 9);
-	else if (tmp > 0)
-		n += dfp_print_integer(self, tmp, 0);
-	else
-		(void)n;
-
-	if (n > 0)
-		n += dfp_print_integer(self, value, 1);
-	else
-		n += dfp_print_integer(self, value, 0);
-
-	return n;
-}
-
-static int dfp_print_long_integer_signed(struct dfp *self, long long value) {
-	int n = 0;
-	n += ABS_NUM_AND_PUT_CHAR(self, value);
-	n += dfp_print_long_integer(self, value);
-	return n;
-}
-
+/// Caution: This is a dirty implementation. Value bigger than 2**64 will be wrong.
 static int dfp_print_float(struct dfp *self, FLOAT_PASSING_TYPE value) {
+	long long tmp;
 	int n = 0;
-	int tmp;
-	long long tmp_l;
 
-	tmp_l = (long long)value;
-	n += dfp_print_long_integer_signed(self, tmp_l);
+	tmp = (long long)value;
+	n += dfp_print_int_signed(self, tmp);
 
 	dfp_putc(self, '.');
-	n++;
+	n += 1;
 
-	tmp = (int)((value - tmp_l) * 1000000);
-	n += dfp_print_integer(self, tmp, 0);
+	tmp = (long long)((value - tmp) * 1000000);
+	n += dfp_print_int(self, tmp);
 
 	return n;
 }
@@ -144,21 +118,21 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error
 	if (chunk->type == FMT_CHAR)
 		return dfp_putc(self, chunk->c);
 	if (chunk->type == FMT_PLACEHOLDER_C)
-		return dfp_putc(self, va_arg(self->args, int));
+		return dfp_putc(self, va_arg(self->args, CHAR_PASSING_TYPE));
 	if (chunk->type == FMT_PLACEHOLDER_LLD)
-		return dfp_print_long_integer_signed(self, va_arg(self->args, long long));
+		return dfp_print_int_signed(self, va_arg(self->args, long long));
 	if (chunk->type == FMT_PLACEHOLDER_LD)
-		return dfp_print_long_integer_signed(self, va_arg(self->args, long));
+		return dfp_print_int_signed(self, va_arg(self->args, long));
 	if (chunk->type == FMT_PLACEHOLDER_D)
-		return dfp_print_integer_signed(self, va_arg(self->args, int));
+		return dfp_print_int_signed(self, va_arg(self->args, int));
 	if (chunk->type == FMT_PLACEHOLDER_LLU)
-		return dfp_print_long_integer(self, va_arg(self->args, unsigned long long));
+		return dfp_print_int(self, va_arg(self->args, unsigned long long));
 	if (chunk->type == FMT_PLACEHOLDER_LU)
-		return dfp_print_long_integer(self, va_arg(self->args, unsigned long long));
+		return dfp_print_int(self, va_arg(self->args, unsigned long));
 	if (chunk->type == FMT_PLACEHOLDER_U)
-		return dfp_print_integer(self, va_arg(self->args, unsigned int), 0);
+		return dfp_print_int(self, va_arg(self->args, unsigned int));
 	if (chunk->type == FMT_PLACEHOLDER_P)
-		return dfp_print_long_integer(self, va_arg(self->args, uintptr_t));
+		return dfp_print_int(self, va_arg(self->args, uintptr_t));
 	if (chunk->type == FMT_PLACEHOLDER_F)
 		return dfp_print_float(self, va_arg(self->args, FLOAT_PASSING_TYPE));
 	if (chunk->type == FMT_PLACEHOLDER_S)

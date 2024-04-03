@@ -1,28 +1,29 @@
 #include "fmt_parser.h"
 #include <stddef.h>
+#include <stdint.h>
 
 static int cmp_n(const char *s1, const char *s2, int size);
 
 struct placeholder_table_item {
-	int size;
-	const char *fmt;
+	const char *name;
+	uint8_t size;
 	enum fmt_parser_data_t type;
 };
 
 static const struct placeholder_table_item placeholder_table[] = {
-	{1, "d", FMT_PLACEHOLDER_D},
-	{1, "i", FMT_PLACEHOLDER_D},
-	{2, "ld", FMT_PLACEHOLDER_LD},
-	{2, "li", FMT_PLACEHOLDER_LD},
-	{3, "lld", FMT_PLACEHOLDER_LLD},
-	{3, "lli", FMT_PLACEHOLDER_LLD},
-	{1, "u", FMT_PLACEHOLDER_U},
-	{2, "lu", FMT_PLACEHOLDER_LU},
-	{3, "llu", FMT_PLACEHOLDER_LLU},
-	{1, "p", FMT_PLACEHOLDER_P},
-	{1, "f", FMT_PLACEHOLDER_F},
-	{1, "s", FMT_PLACEHOLDER_S},
-	{1, "c", FMT_PLACEHOLDER_C},
+	{"d", 1, FMT_PLACEHOLDER_D},
+	{"i", 1, FMT_PLACEHOLDER_D},
+	{"ld", 2, FMT_PLACEHOLDER_LD},
+	{"li", 2, FMT_PLACEHOLDER_LD},
+	{"lld", 3, FMT_PLACEHOLDER_LLD},
+	{"lli", 3, FMT_PLACEHOLDER_LLD},
+	{"u", 1, FMT_PLACEHOLDER_U},
+	{"lu", 2, FMT_PLACEHOLDER_LU},
+	{"llu", 3, FMT_PLACEHOLDER_LLU},
+	{"p", 1, FMT_PLACEHOLDER_P},
+	{"f", 1, FMT_PLACEHOLDER_F},
+	{"s", 1, FMT_PLACEHOLDER_S},
+	{"c", 1, FMT_PLACEHOLDER_C},
 };
 
 #define PLACEHOLDER_TABLE_SIZE (sizeof(placeholder_table) / sizeof(placeholder_table[0]))
@@ -32,7 +33,7 @@ static int find_placeholder_item(const char *s, const struct placeholder_table_i
 	size_t i;
 	for (i = 0; i < PLACEHOLDER_TABLE_SIZE; i++) {
 		tmp = &placeholder_table[i];
-		if (!cmp_n(s, tmp->fmt, tmp->size)) {
+		if (!cmp_n(s, tmp->name, tmp->size)) {
 			*result = tmp;
 			return 0;
 		}
