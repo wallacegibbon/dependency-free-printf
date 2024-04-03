@@ -3,6 +3,9 @@
 #include <stdint.h>
 
 /// According to <https://en.cppreference.com/w/c/language/conversion>:
+/// In a function call expression when the call is made to
+/// 	1) a function without a prototype (until C23)
+/// 	2) a variadic function, where the argument expression is one of the trailing arguments that are matched against the ellipsis parameter
 /// Each argument of integer type undergoes integer promotion (see below),
 /// and each argument of type float is implicitly converted to the type double.
 
