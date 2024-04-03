@@ -52,7 +52,10 @@ static int dfp_putc(struct dfp *self, int c) {
 	return 1;
 }
 
-static int dfp_print_integer(struct dfp *self, unsigned int value, int full_width) {
+static int dfp_print_integer(struct dfp *self, uint32_t value, int full_width) {
+	/// The decimal string of 2**32 have 10 characters, so 16B is enough for any integer.
+#define UINT32_BUFFER_SIZE 16
+	char buffer[UINT32_BUFFER_SIZE];
 	int i, j;
 
 	if (value == 0 && full_width == 0) {
@@ -60,20 +63,20 @@ static int dfp_print_integer(struct dfp *self, unsigned int value, int full_widt
 		return 1;
 	}
 
-	for (i = 0; i < DFP_BUFFER_SIZE && value > 0; i++) {
-		self->buffer[i] = value % 10 + '0';
+	for (i = 0; i < UINT32_BUFFER_SIZE - 1 && value > 0; i++) {
+		buffer[i] = value % 10 + '0';
 		value /= 10;
 	}
 
 	if (full_width > i) {
-		for (j = full_width - i; j > 0 && i < DFP_BUFFER_SIZE; j--)
-			self->buffer[i++] = '0';
+		for (j = full_width - i; j > 0 && i < UINT32_BUFFER_SIZE - 1; j--)
+			buffer[i++] = '0';
 	}
 
-	reverse_arr(self->buffer, i);
-	self->buffer[i] = '\0';
+	reverse_arr(buffer, i);
+	buffer[i] = '\0';
 
-	self->puts(self->buffer);
+	self->puts(buffer);
 	return i;
 }
 
@@ -141,36 +144,36 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error
 	if (chunk->type == FMT_CHAR)
 		return dfp_putc(self, chunk->c);
 	if (chunk->type == FMT_PLACEHOLDER_C)
-		return dfp_putc(self, va_arg(self->ap, int));
+		return dfp_putc(self, va_arg(self->args, int));
 	if (chunk->type == FMT_PLACEHOLDER_LLD)
-		return dfp_print_long_integer_signed(self, va_arg(self->ap, long long));
+		return dfp_print_long_integer_signed(self, va_arg(self->args, long long));
 	if (chunk->type == FMT_PLACEHOLDER_LD)
-		return dfp_print_long_integer_signed(self, va_arg(self->ap, long));
+		return dfp_print_long_integer_signed(self, va_arg(self->args, long));
 	if (chunk->type == FMT_PLACEHOLDER_D)
-		return dfp_print_integer_signed(self, va_arg(self->ap, int));
+		return dfp_print_integer_signed(self, va_arg(self->args, int));
 	if (chunk->type == FMT_PLACEHOLDER_LLU)
-		return dfp_print_long_integer(self, va_arg(self->ap, unsigned long long));
+		return dfp_print_long_integer(self, va_arg(self->args, unsigned long long));
 	if (chunk->type == FMT_PLACEHOLDER_LU)
-		return dfp_print_long_integer(self, va_arg(self->ap, unsigned long long));
+		return dfp_print_long_integer(self, va_arg(self->args, unsigned long long));
 	if (chunk->type == FMT_PLACEHOLDER_U)
-		return dfp_print_integer(self, va_arg(self->ap, unsigned int), 0);
+		return dfp_print_integer(self, va_arg(self->args, unsigned int), 0);
 	if (chunk->type == FMT_PLACEHOLDER_P)
-		return dfp_print_long_integer(self, va_arg(self->ap, uintptr_t));
+		return dfp_print_long_integer(self, va_arg(self->args, uintptr_t));
 	if (chunk->type == FMT_PLACEHOLDER_F)
-		return dfp_print_float(self, va_arg(self->ap, FLOAT_PASSING_TYPE));
+		return dfp_print_float(self, va_arg(self->args, FLOAT_PASSING_TYPE));
 	if (chunk->type == FMT_PLACEHOLDER_S)
-		return self->puts(va_arg(self->ap, const char *));
+		return self->puts(va_arg(self->args, const char *));
 
 	*error = 1;
 	return 0;
 }
 
-int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
+int dfp_vprintf(struct dfp *self, const char *fmt, va_list args) {
 	struct fmt_parser_chunk chunk;
 	int n = 0;
 	int error = 0;
 
-	va_copy(self->ap, ap);
+	va_copy(self->args, args);
 	if (fmt_parser_init(&self->parser, fmt))
 		return -1;
 
@@ -181,7 +184,7 @@ int dfp_vprintf(struct dfp *self, const char *fmt, va_list ap) {
 	if (error || !fmt_parser_finished(&self->parser))
 		n = -1;
 
-	va_end(self->ap);
+	va_end(self->args);
 
 	return n;
 }
