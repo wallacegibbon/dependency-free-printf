@@ -14,7 +14,7 @@
 #define va_copy(dst, src) __va_copy(dst, src)
 #elif !defined(va_copy)
 // #define va_copy(dst, src) ((dst) = (src)) // this cause errors on some compilers
-#define va_copy(dst, src) memcpy_((&dst), (&src), sizeof(va_list))
+#define va_copy(dst, src) memcpy_n((&dst), (&src), sizeof(va_list))
 #endif
 
 /// Using a global variable to avoid `malloc` (to support more platforms)
@@ -25,22 +25,6 @@ static void memcpy_n(void *dest, void *src, int n) {
 	int i;
 	for (i = 0, s = src, d = dest; i < n; i++)
 		*d++ = *s++;
-}
-
-static inline int swap_arr_by_index(void *arr, int elem_size, int i1, int i2) {
-	uint8_t tmp[elem_size];
-	memcpy_n(tmp, arr + i1 * elem_size, elem_size);
-	memcpy_n(arr + i1 * elem_size, arr + i2 * elem_size, elem_size);
-	memcpy_n(arr + i2 * elem_size, tmp, elem_size);
-	return 0;
-}
-
-static void reverse_arr(char *buf, int size) {
-	int i, middle;
-
-	middle = size / 2;
-	for (i = 0; i < middle; i++)
-		swap_arr_by_index(buf, 1, i, size - i - 1);
 }
 
 /// Unlike `putc` in standard C, `DFP_putc` returns 1
@@ -56,28 +40,31 @@ static int dfp_print_int_with_width(struct dfp *self, unsigned long long value, 
 	/// And integer won't be bigger than 64-bit in the near future.
 #define INT_BUFFER_SIZE 32
 	char buffer[INT_BUFFER_SIZE];
-	int i, j;
+	int start, dry_width, i;
 
 	if (value == 0 && width == 0) {
 		dfp_putc(self, '0');
 		return 1;
 	}
 
-	for (i = 0; i < INT_BUFFER_SIZE - 1 && value > 0; i++) {
-		buffer[i] = value % 10 + '0';
+	buffer[INT_BUFFER_SIZE - 1] = '\0';
+	start = INT_BUFFER_SIZE - 2;
+
+	/// `start` will never be 0 in this function since `long long` will never use up `buffer`.
+	/// `start` is an empty pointer. It always points to the next position to store.
+	while (value > 0) {
+		buffer[start--] = value % 10 + '0';
 		value /= 10;
 	}
 
-	if (width > i) {
-		for (j = width - i; j > 0 && i < INT_BUFFER_SIZE - 1; j--)
-			buffer[i++] = '0';
+	dry_width = INT_BUFFER_SIZE - 2 - start;
+	if (dry_width < width) {
+		for (i = width - dry_width; i > 0; i--)
+			buffer[start--] = '0';
 	}
 
-	reverse_arr(buffer, i);
-	buffer[i] = '\0';
-
-	self->puts(buffer);
-	return i;
+	self->puts(buffer + start + 1);
+	return INT_BUFFER_SIZE - 2 - start;
 }
 
 static int dfp_print_int(struct dfp *self, unsigned long long value) {
