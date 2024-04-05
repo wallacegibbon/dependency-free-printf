@@ -1,7 +1,6 @@
 #ifndef __DFP_LIB_H
 #define __DFP_LIB_H
 
-#include "fmt_parser.h"
 #include <stdarg.h>
 
 typedef int (*dfp_puts_fn)(const char *);
