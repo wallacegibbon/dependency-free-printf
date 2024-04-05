@@ -7,7 +7,6 @@
 typedef int (*dfp_puts_fn)(const char *);
 
 struct dfp {
-	struct fmt_parser parser;
 	int (*puts)(const char *s);
 	va_list args;
 };

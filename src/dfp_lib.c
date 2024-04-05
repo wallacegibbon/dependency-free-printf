@@ -129,19 +129,20 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error
 }
 
 int dfp_vprintf(struct dfp *self, const char *fmt, va_list args) {
+	struct fmt_parser parser;
 	struct fmt_parser_chunk chunk;
 	int n = 0;
 	int error = 0;
 
 	va_copy(self->args, args);
-	if (fmt_parser_init(&self->parser, fmt))
+	if (fmt_parser_init(&parser, fmt))
 		return -1;
 
-	while (!fmt_parser_step(&self->parser, &chunk) && !error)
+	while (!fmt_parser_step(&parser, &chunk) && !error)
 		n += dfp_step(self, &chunk, &error);
 
 	/// dfp error (caused by `dfp_step`) or parser error (unfinished fmt)
-	if (error || !fmt_parser_finished(&self->parser))
+	if (error || !fmt_parser_finished(&parser))
 		n = -1;
 
 	va_end(self->args);
