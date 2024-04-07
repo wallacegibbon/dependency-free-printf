@@ -32,8 +32,8 @@ int main() {
 
 	tmp_f = 3.1415926;
 
-	tmp = printf("float:\t\t\t%f\n", tmp_f);
-	tmp = DFP_PRINTF("float:\t\t\t%f\n", tmp_f);
+	assert(printf("float:\t\t\t%f\n", tmp_f) != -1);
+	assert(DFP_PRINTF("float:\t\t\t%f\n", tmp_f) != -1);
 
 	/// Special value to test the `0`s.
 	printf("special long long:\t%llu\n", 140723709965000LU);

@@ -83,6 +83,7 @@ static int dfp_print_int_signed(struct dfp *self, long long value) {
 	return n;
 }
 
+#ifndef NO_FLOAT
 /// Caution: This is a dirty implementation. Value bigger than 2**64 will be wrong.
 static int dfp_print_float(struct dfp *self, double value) {
 	long long tmp;
@@ -99,6 +100,7 @@ static int dfp_print_float(struct dfp *self, double value) {
 
 	return n;
 }
+#endif
 
 static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error) {
 	if (chunk->type == FMT_CHAR)
@@ -119,8 +121,10 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error
 		return dfp_print_int(self, va_arg(self->args, unsigned int));
 	if (chunk->type == FMT_PLACEHOLDER_P)
 		return dfp_print_int(self, va_arg(self->args, uintptr_t));
+#ifndef NO_FLOAT
 	if (chunk->type == FMT_PLACEHOLDER_F)
 		return dfp_print_float(self, va_arg(self->args, double));
+#endif
 	if (chunk->type == FMT_PLACEHOLDER_S)
 		return self->puts(va_arg(self->args, const char *));
 

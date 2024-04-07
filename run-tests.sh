@@ -1,5 +1,6 @@
 #! /bin/sh
 
+#MAKE_OPT="NO_FLOAT=1"
 MAKE_OPT=""
 
 parse_arguments() {
