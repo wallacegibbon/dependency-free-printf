@@ -9,31 +9,10 @@
 /// Each argument of integer type undergoes integer promotion (see below),
 /// and each argument of type float is implicitly converted to the type double.
 
-/// Polyfill: The `va_copy` macro is from C99 standard, old compilers may not support it.
-#if !defined(va_copy) && defined(__va_copy)
-#define va_copy(dst, src) __va_copy(dst, src)
-#elif !defined(va_copy)
-// #define va_copy(dst, src) ((dst) = (src)) // this cause errors on some compilers
-#define va_copy(dst, src) memcpy_n((&dst), (&src), sizeof(va_list))
-#endif
-
 /// Using a global variable to avoid `malloc` (to support more platforms)
 static struct dfp default_dfp;
 
-static void memcpy_n(void *dest, void *src, int n) {
-	char *s, *d;
-	int i;
-	for (i = 0, s = src, d = dest; i < n; i++)
-		*d++ = *s++;
-}
-
-/// Unlike `putc` in standard C, `DFP_putc` returns 1
-static int dfp_putc(struct dfp *self, int c) {
-	char buf[2] = {0};
-	buf[0] = c;
-	self->puts(buf);
-	return 1;
-}
+static int dfp_putc(struct dfp *self, int c);
 
 static int dfp_print_int_with_width(struct dfp *self, unsigned long long value, int width) {
 	/// The decimal string of 2**64 have 20 characters, so 32B is enough for any 64-bit integer.
@@ -102,31 +81,31 @@ static int dfp_print_float(struct dfp *self, double value) {
 }
 #endif
 
-static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error) {
+static int dfp_step(struct dfp *self, va_list *args, struct fmt_parser_chunk *chunk, int *error) {
 	if (chunk->type == FMT_CHAR)
 		return dfp_putc(self, chunk->c);
 	if (chunk->type == FMT_PLACEHOLDER_C)
-		return dfp_putc(self, va_arg(self->args, int));
+		return dfp_putc(self, va_arg(*args, int));
 	if (chunk->type == FMT_PLACEHOLDER_LLD)
-		return dfp_print_int_signed(self, va_arg(self->args, long long));
+		return dfp_print_int_signed(self, va_arg(*args, long long));
 	if (chunk->type == FMT_PLACEHOLDER_LD)
-		return dfp_print_int_signed(self, va_arg(self->args, long));
+		return dfp_print_int_signed(self, va_arg(*args, long));
 	if (chunk->type == FMT_PLACEHOLDER_D)
-		return dfp_print_int_signed(self, va_arg(self->args, int));
+		return dfp_print_int_signed(self, va_arg(*args, int));
 	if (chunk->type == FMT_PLACEHOLDER_LLU)
-		return dfp_print_int(self, va_arg(self->args, unsigned long long));
+		return dfp_print_int(self, va_arg(*args, unsigned long long));
 	if (chunk->type == FMT_PLACEHOLDER_LU)
-		return dfp_print_int(self, va_arg(self->args, unsigned long));
+		return dfp_print_int(self, va_arg(*args, unsigned long));
 	if (chunk->type == FMT_PLACEHOLDER_U)
-		return dfp_print_int(self, va_arg(self->args, unsigned int));
+		return dfp_print_int(self, va_arg(*args, unsigned int));
 	if (chunk->type == FMT_PLACEHOLDER_P)
-		return dfp_print_int(self, va_arg(self->args, uintptr_t));
+		return dfp_print_int(self, va_arg(*args, uintptr_t));
 #ifndef NO_FLOAT
 	if (chunk->type == FMT_PLACEHOLDER_F)
-		return dfp_print_float(self, va_arg(self->args, double));
+		return dfp_print_float(self, va_arg(*args, double));
 #endif
 	if (chunk->type == FMT_PLACEHOLDER_S)
-		return self->puts(va_arg(self->args, const char *));
+		return self->puts(va_arg(*args, const char *));
 
 	*error = 1;
 	return 0;
@@ -138,20 +117,25 @@ int dfp_vprintf(struct dfp *self, const char *fmt, va_list args) {
 	int n = 0;
 	int error = 0;
 
-	va_copy(self->args, args);
 	if (fmt_parser_init(&parser, fmt))
 		return -1;
 
 	while (!fmt_parser_step(&parser, &chunk) && !error)
-		n += dfp_step(self, &chunk, &error);
+		n += dfp_step(self, &args, &chunk, &error);
 
 	/// dfp error (caused by `dfp_step`) or parser error (unfinished fmt)
 	if (error || !fmt_parser_finished(&parser))
 		n = -1;
 
-	va_end(self->args);
-
 	return n;
+}
+
+/// Unlike `putc` in standard C, `DFP_putc` returns 1
+static int dfp_putc(struct dfp *self, int c) {
+	char buf[2] = {0};
+	buf[0] = c;
+	self->puts(buf);
+	return 1;
 }
 
 int dfp_init(struct dfp *self, dfp_puts_fn puts) {

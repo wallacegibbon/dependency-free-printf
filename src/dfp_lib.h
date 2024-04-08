@@ -7,7 +7,6 @@ typedef int (*dfp_puts_fn)(const char *);
 
 struct dfp {
 	int (*puts)(const char *s);
-	va_list args;
 };
 
 int dfp_init(struct dfp *self, dfp_puts_fn puts);
