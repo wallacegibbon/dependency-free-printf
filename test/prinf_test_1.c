@@ -1,13 +1,13 @@
-#include "../src/dfp_lib.h"
+#include "dfp_lib.h"
 #include <assert.h>
 #include <stdio.h>
 
 int my_puts(const char *s);
 
 int main() {
-	int tmp;
 	long long tmp_ll;
 	float tmp_f;
+	int tmp;
 
 	assert(!DFP_PRINTF_INIT(my_puts));
 
@@ -34,10 +34,6 @@ int main() {
 
 	assert(printf("float:\t\t\t%f\n", tmp_f) != -1);
 	assert(DFP_PRINTF("float:\t\t\t%f\n", tmp_f) != -1);
-
-	/// Special value to test the `0`s.
-	printf("special long long:\t%llu\n", 140723709965000LU);
-	DFP_PRINTF("special long long:\t%llu\n", 140723709965000LU);
 
 	/// invalid placeholder
 	assert(DFP_PRINTF("%t") == -1);

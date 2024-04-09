@@ -1,12 +1,11 @@
 #include "fmt_parser.h"
 #include <stddef.h>
-#include <stdint.h>
 
 static int cmp_n(const char *s1, const char *s2, int size);
 
 struct placeholder_table_item {
 	const char *name;
-	uint8_t size;
+	int size;
 	enum fmt_parser_data_t type;
 };
 
