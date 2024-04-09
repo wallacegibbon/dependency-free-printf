@@ -10,7 +10,7 @@ struct placeholder_table_item {
 	enum fmt_parser_data_t type;
 };
 
-static const struct placeholder_table_item placeholder_table[] = {
+static struct placeholder_table_item placeholder_table[] = {
 	{"d", 1, FMT_PLACEHOLDER_D},
 	{"i", 1, FMT_PLACEHOLDER_D},
 	{"ld", 2, FMT_PLACEHOLDER_LD},
@@ -28,8 +28,8 @@ static const struct placeholder_table_item placeholder_table[] = {
 
 #define PLACEHOLDER_TABLE_SIZE (sizeof(placeholder_table) / sizeof(placeholder_table[0]))
 
-static int find_placeholder_item(const char *s, const struct placeholder_table_item **result) {
-	const struct placeholder_table_item *tmp;
+static int find_placeholder_item(const char *s, struct placeholder_table_item **result) {
+	struct placeholder_table_item *tmp;
 	size_t i;
 	for (i = 0; i < PLACEHOLDER_TABLE_SIZE; i++) {
 		tmp = &placeholder_table[i];
@@ -43,7 +43,7 @@ static int find_placeholder_item(const char *s, const struct placeholder_table_i
 }
 
 static int fmt_parser_placeholder(struct fmt_parser *self, struct fmt_parser_chunk *result) {
-	const struct placeholder_table_item *item;
+	struct placeholder_table_item *item;
 
 	if (find_placeholder_item(self->fmt, &item))
 		return 1;
