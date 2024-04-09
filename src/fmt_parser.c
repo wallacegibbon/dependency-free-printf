@@ -5,7 +5,8 @@ static int cmp_n(const char *s1, const char *s2, int size);
 
 struct placeholder_table_item {
 	const char *name;
-	int size;
+	/// The number of placeholder strings will never be more than 256.
+	unsigned char size;
 	enum fmt_parser_data_t type;
 };
 
@@ -29,7 +30,7 @@ static struct placeholder_table_item placeholder_table[] = {
 
 static int find_placeholder_item(const char *s, struct placeholder_table_item **result) {
 	struct placeholder_table_item *tmp;
-	size_t i;
+	unsigned char i;
 	for (i = 0; i < PLACEHOLDER_TABLE_SIZE; i++) {
 		tmp = &placeholder_table[i];
 		if (!cmp_n(s, tmp->name, tmp->size)) {
