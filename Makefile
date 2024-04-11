@@ -5,6 +5,8 @@ C_INCLUDES += ./src ./include
 
 OBJECTS += $(addprefix $(BUILD_DIR)/, $(notdir $(C_SOURCE_FILES:.c=.c.o)))
 
+-include $(OBJECTS:.o=.d)
+
 #COMMON_C_FLAGS += -W -g -ffunction-sections -fdata-sections -MMD -MP $(addprefix -I, $(C_INCLUDES))
 COMMON_C_FLAGS += -W -g -MMD -MP $(addprefix -I, $(C_INCLUDES))
 COMMON_LD_FLAGS += -Wl,--gc-sections -Wl,-Map=$@.map
