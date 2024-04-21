@@ -1,7 +1,8 @@
 #include "../src/fmt_parser.h"
 #include <assert.h>
 
-int main() {
+int main()
+{
 	struct fmt_parser parser;
 	struct fmt_parser_chunk chunk;
 

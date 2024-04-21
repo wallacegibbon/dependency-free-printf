@@ -28,7 +28,8 @@ static struct placeholder_table_item placeholder_table[] = {
 
 #define PLACEHOLDER_TABLE_SIZE (sizeof(placeholder_table) / sizeof(placeholder_table[0]))
 
-static int find_placeholder_item(const char *s, struct placeholder_table_item **result) {
+static int find_placeholder_item(const char *s, struct placeholder_table_item **result)
+{
 	struct placeholder_table_item *tmp;
 	unsigned char i;
 	for (i = 0; i < PLACEHOLDER_TABLE_SIZE; i++) {
@@ -42,7 +43,8 @@ static int find_placeholder_item(const char *s, struct placeholder_table_item **
 	return 1;
 }
 
-static int fmt_parser_placeholder(struct fmt_parser *self, struct fmt_parser_chunk *result) {
+static int fmt_parser_placeholder(struct fmt_parser *self, struct fmt_parser_chunk *result)
+{
 	struct placeholder_table_item *item;
 
 	if (find_placeholder_item(self->fmt, &item))
@@ -53,14 +55,16 @@ static int fmt_parser_placeholder(struct fmt_parser *self, struct fmt_parser_chu
 	return 0;
 }
 
-static int fmt_parser_normal_char(struct fmt_parser *self, struct fmt_parser_chunk *result) {
+static int fmt_parser_normal_char(struct fmt_parser *self, struct fmt_parser_chunk *result)
+{
 	result->type = FMT_CHAR;
 	result->c = *self->fmt;
 	self->fmt++;
 	return 0;
 }
 
-int fmt_parser_step(struct fmt_parser *self, struct fmt_parser_chunk *result) {
+int fmt_parser_step(struct fmt_parser *self, struct fmt_parser_chunk *result)
+{
 	if (fmt_parser_finished(self))
 		return 1;
 
@@ -76,16 +80,19 @@ int fmt_parser_step(struct fmt_parser *self, struct fmt_parser_chunk *result) {
 	return fmt_parser_placeholder(self, result);
 }
 
-int fmt_parser_finished(struct fmt_parser *self) {
+int fmt_parser_finished(struct fmt_parser *self)
+{
 	return *self->fmt == '\0';
 }
 
-int fmt_parser_init(struct fmt_parser *self, const char *fmt) {
+int fmt_parser_init(struct fmt_parser *self, const char *fmt)
+{
 	self->fmt = fmt;
 	return 0;
 }
 
-static int cmp_n(const char *s1, const char *s2, int size) {
+static int cmp_n(const char *s1, const char *s2, int size)
+{
 	int tmp;
 	for (tmp = 0; !tmp && size; size--)
 		tmp = *s1++ - *s2++;

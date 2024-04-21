@@ -4,7 +4,8 @@
 
 int my_puts(const char *s);
 
-int main() {
+int main()
+{
 	long long tmp_ll;
 	float tmp_f;
 	int tmp;
@@ -41,6 +42,7 @@ int main() {
 	return 0;
 }
 
-int my_puts(const char *s) {
+int my_puts(const char *s)
+{
 	return fputs(s, stdout);
 }

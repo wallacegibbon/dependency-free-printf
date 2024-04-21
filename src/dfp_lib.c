@@ -14,7 +14,8 @@ static struct dfp default_dfp;
 
 static int dfp_putc(struct dfp *self, int c);
 
-static int dfp_print_int_with_width(struct dfp *self, unsigned long long value, int width) {
+static int dfp_print_int_with_width(struct dfp *self, unsigned long long value, int width)
+{
 	/// The decimal string of 2**64 have 20 characters, so 32B is enough for any 64-bit integer.
 	/// And integer won't be bigger than 64-bit in the near future.
 #define INT_BUFFER_SIZE 32
@@ -46,11 +47,13 @@ static int dfp_print_int_with_width(struct dfp *self, unsigned long long value, 
 	return INT_BUFFER_SIZE - 2 - start;
 }
 
-static int dfp_print_int(struct dfp *self, unsigned long long value) {
+static int dfp_print_int(struct dfp *self, unsigned long long value)
+{
 	return dfp_print_int_with_width(self, value, 0);
 }
 
-static int dfp_print_int_signed(struct dfp *self, long long value) {
+static int dfp_print_int_signed(struct dfp *self, long long value)
+{
 	int n = 0;
 
 	if (value < 0) {
@@ -64,7 +67,8 @@ static int dfp_print_int_signed(struct dfp *self, long long value) {
 
 #ifndef NO_FLOAT
 /// Caution: This is a dirty implementation. Value bigger than 2**64 will be wrong.
-static int dfp_print_float(struct dfp *self, double value) {
+static int dfp_print_float(struct dfp *self, double value)
+{
 	long long tmp;
 	int n = 0;
 
@@ -81,7 +85,8 @@ static int dfp_print_float(struct dfp *self, double value) {
 }
 #endif
 
-static int dfp_step(struct dfp *self, va_list *args, struct fmt_parser_chunk *chunk, int *error) {
+static int dfp_step(struct dfp *self, va_list *args, struct fmt_parser_chunk *chunk, int *error)
+{
 	if (chunk->type == FMT_CHAR)
 		return dfp_putc(self, chunk->c);
 	if (chunk->type == FMT_PLACEHOLDER_C)
@@ -111,7 +116,8 @@ static int dfp_step(struct dfp *self, va_list *args, struct fmt_parser_chunk *ch
 	return 0;
 }
 
-int dfp_vprintf(struct dfp *self, const char *fmt, va_list args) {
+int dfp_vprintf(struct dfp *self, const char *fmt, va_list args)
+{
 	struct fmt_parser parser;
 	struct fmt_parser_chunk chunk;
 	int n = 0;
@@ -131,29 +137,34 @@ int dfp_vprintf(struct dfp *self, const char *fmt, va_list args) {
 }
 
 /// Unlike `putc` in standard C, `DFP_putc` returns 1
-static int dfp_putc(struct dfp *self, int c) {
+static int dfp_putc(struct dfp *self, int c)
+{
 	char buf[2] = {0};
 	buf[0] = c;
 	self->puts(buf);
 	return 1;
 }
 
-int dfp_init(struct dfp *self, dfp_puts_fn puts) {
+int dfp_init(struct dfp *self, dfp_puts_fn puts)
+{
 	self->puts = puts;
 	return 0;
 }
 
-int dfp_replace_puts(struct dfp *self, dfp_puts_fn puts) {
+int dfp_replace_puts(struct dfp *self, dfp_puts_fn puts)
+{
 	self->puts = puts;
 	return 0;
 }
 
-int DFP_PRINTF_INIT(dfp_puts_fn puts) {
+int DFP_PRINTF_INIT(dfp_puts_fn puts)
+{
 	return dfp_init(&default_dfp, puts);
 }
 
 /// This is the function to be used by user.
-int DFP_PRINTF(const char *fmt, ...) {
+int DFP_PRINTF(const char *fmt, ...)
+{
 	va_list args;
 	int ret;
 
