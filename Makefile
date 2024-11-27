@@ -28,15 +28,15 @@ vpath %.c $(sort $(dir $(C_SOURCE_FILES)))
 all: $(OBJECTS)
 
 $(BUILD_DIR)/%.c.o: %.c | build_dir
-	@echo -e "\tCC $<"
+	@echo "CC $<"
 	@$(CC) -c -o $@ $< $(COMMON_C_FLAGS)
 
 vpath %.c ./test
 
 $(BUILD_DIR)/%: %.c $(OBJECTS)
-	@echo -e "\tCC $<"
+	@echo "CC $<"
 	@$(CC) -o $@ $^ $(COMMON_C_FLAGS) $(COMMON_LD_FLAGS)
-	@echo -e "\t./$@\n"
+	@echo "./$@\n"
 	@$(MEMORY_CHECK_PROG) $@
 
 build_dir:

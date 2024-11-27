@@ -4,45 +4,43 @@
 
 int my_puts(const char *s);
 
-int main()
-{
-	long long tmp_ll;
-	float tmp_f;
-	int tmp;
+int main() {
+    long long tmp_ll;
+    float tmp_f;
+    int tmp;
 
-	assert(!DFP_PRINTF_INIT(my_puts));
+    assert(!DFP_PRINTF_INIT(my_puts));
 
-	tmp = printf("string:\t\t\thello, world %u %llu %%\n", 0, (unsigned long long)10);
-	// printf("size: %d\n", tmp);
-	assert(tmp == 30);
+    tmp = printf("string:\t\t\thello, world %u %llu %%\n", 0, (unsigned long long)10);
+    // printf("size: %d\n", tmp);
+    assert(tmp == 30);
 
-	tmp = DFP_PRINTF("string:\t\t\thello, world %u %llu %%\n", 0, (unsigned long long)10);
-	// DFP_PRINTF("size: %d\n", tmp);
-	assert(tmp == 30);
+    tmp = DFP_PRINTF("string:\t\t\thello, world %u %llu %%\n", 0, (unsigned long long)10);
+    // DFP_PRINTF("size: %d\n", tmp);
+    assert(tmp == 30);
 
-	/// 0x1234567812345678 == 1311768465173141112
-	tmp_ll = 0x1234567812345678;
+    /// 0x1234567812345678 == 1311768465173141112
+    tmp_ll = 0x1234567812345678;
 
-	tmp = printf("long long:\t\t%d, %lld\n", (int)tmp_ll, tmp_ll);
-	// printf("size: %d\n", tmp);
-	assert(tmp == 43);
+    tmp = printf("long long:\t\t%d, %lld\n", (int)tmp_ll, tmp_ll);
+    // printf("size: %d\n", tmp);
+    assert(tmp == 43);
 
-	tmp = DFP_PRINTF("long long:\t\t%d, %lld\n", (int)tmp_ll, tmp_ll);
-	// DFP_PRINTF("size: %d\n", tmp);
-	assert(tmp == 43);
+    tmp = DFP_PRINTF("long long:\t\t%d, %lld\n", (int)tmp_ll, tmp_ll);
+    // DFP_PRINTF("size: %d\n", tmp);
+    assert(tmp == 43);
 
-	tmp_f = 3.1415926;
+    tmp_f = 3.1415926;
 
-	assert(printf("float:\t\t\t%f\n", tmp_f) != -1);
-	assert(DFP_PRINTF("float:\t\t\t%f\n", tmp_f) != -1);
+    assert(printf("float:\t\t\t%f\n", tmp_f) != -1);
+    assert(DFP_PRINTF("float:\t\t\t%f\n", tmp_f) != -1);
 
-	/// invalid placeholder
-	assert(DFP_PRINTF("%t") == -1);
+    /// invalid placeholder
+    assert(DFP_PRINTF("%t") == -1);
 
-	return 0;
+    return 0;
 }
 
-int my_puts(const char *s)
-{
-	return fputs(s, stdout);
+int my_puts(const char *s) {
+    return fputs(s, stdout);
 }
