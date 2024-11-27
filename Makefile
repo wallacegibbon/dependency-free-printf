@@ -38,6 +38,7 @@ $(BUILD_DIR)/%: %.c $(OBJECTS)
 	@$(CC) -o $@ $^ $(COMMON_C_FLAGS) $(COMMON_LD_FLAGS)
 	@echo "./$@\n"
 	@$(MEMORY_CHECK_PROG) $@
+	@rm $@
 
 build_dir:
 	@mkdir -p $(BUILD_DIR)

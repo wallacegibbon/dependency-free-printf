@@ -81,37 +81,37 @@ static int dfp_print_float(struct dfp *self, double value) {
 }
 #endif
 
-static int dfp_step(struct dfp *self, va_list args, struct fmt_parser_chunk *chunk, int *error) {
+static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk, int *error) {
     if (chunk->type == FMT_CHAR)
         return dfp_putc(self, chunk->c);
     if (chunk->type == FMT_PLACEHOLDER_C)
-        return dfp_putc(self, va_arg(args, int));
+        return dfp_putc(self, va_arg(self->va, int));
     if (chunk->type == FMT_PLACEHOLDER_LLD)
-        return dfp_print_int_signed(self, va_arg(args, long long));
+        return dfp_print_int_signed(self, va_arg(self->va, long long));
     if (chunk->type == FMT_PLACEHOLDER_LD)
-        return dfp_print_int_signed(self, va_arg(args, long));
+        return dfp_print_int_signed(self, va_arg(self->va, long));
     if (chunk->type == FMT_PLACEHOLDER_D)
-        return dfp_print_int_signed(self, va_arg(args, int));
+        return dfp_print_int_signed(self, va_arg(self->va, int));
     if (chunk->type == FMT_PLACEHOLDER_LLU)
-        return dfp_print_int(self, va_arg(args, unsigned long long));
+        return dfp_print_int(self, va_arg(self->va, unsigned long long));
     if (chunk->type == FMT_PLACEHOLDER_LU)
-        return dfp_print_int(self, va_arg(args, unsigned long));
+        return dfp_print_int(self, va_arg(self->va, unsigned long));
     if (chunk->type == FMT_PLACEHOLDER_U)
-        return dfp_print_int(self, va_arg(args, unsigned int));
+        return dfp_print_int(self, va_arg(self->va, unsigned int));
     if (chunk->type == FMT_PLACEHOLDER_P)
-        return dfp_print_int(self, va_arg(args, uintptr_t));
+        return dfp_print_int(self, va_arg(self->va, uintptr_t));
 #ifndef NO_FLOAT
     if (chunk->type == FMT_PLACEHOLDER_F)
-        return dfp_print_float(self, va_arg(args, double));
+        return dfp_print_float(self, va_arg(self->va, double));
 #endif
     if (chunk->type == FMT_PLACEHOLDER_S)
-        return self->puts(va_arg(args, const char *));
+        return self->puts(va_arg(self->va, const char *));
 
     *error = 1;
     return 0;
 }
 
-int dfp_vprintf(struct dfp *self, const char *fmt, va_list args) {
+int dfp_vprintf(struct dfp *self, const char *fmt, va_list va) {
     struct fmt_parser parser;
     struct fmt_parser_chunk chunk;
     int n = 0;
@@ -120,8 +120,9 @@ int dfp_vprintf(struct dfp *self, const char *fmt, va_list args) {
     if (fmt_parser_init(&parser, fmt))
         return -1;
 
+    va_copy(self->va, va);
     while (!fmt_parser_step(&parser, &chunk) && !error)
-        n += dfp_step(self, args, &chunk, &error);
+        n += dfp_step(self, &chunk, &error);
 
     /// dfp error (caused by `dfp_step`) or parser error (unfinished fmt)
     if (error || !fmt_parser_finished(&parser))
@@ -154,12 +155,12 @@ int DFP_PRINTF_INIT(dfp_puts_fn puts) {
 
 /// This is the function to be used by user.
 int DFP_PRINTF(const char *fmt, ...) {
-    va_list args;
+    va_list va;
     int ret;
 
-    va_start(args, fmt);
-    ret = dfp_vprintf(&default_dfp, fmt, args);
-    va_end(args);
+    va_start(va, fmt);
+    ret = dfp_vprintf(&default_dfp, fmt, va);
+    va_end(va);
 
     return ret;
 }
