@@ -17,6 +17,7 @@ static struct placeholder_table_item placeholder_table[] = {
 	{"li", 2, FMT_PLACEHOLDER_LD},
 	{"lld", 3, FMT_PLACEHOLDER_LLD},
 	{"lli", 3, FMT_PLACEHOLDER_LLD},
+	{"x", 1, FMT_PLACEHOLDER_U},
 	{"u", 1, FMT_PLACEHOLDER_U},
 	{"lu", 2, FMT_PLACEHOLDER_LU},
 	{"llu", 3, FMT_PLACEHOLDER_LLU},
@@ -69,7 +70,6 @@ static int fmt_parser_normal_char(struct fmt_parser *self,
 
 int fmt_parser_step(struct fmt_parser *self, struct fmt_parser_chunk *result)
 {
-	int r;
 	if (fmt_parser_finished(self))
 		return 1;
 
