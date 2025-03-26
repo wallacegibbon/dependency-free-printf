@@ -107,27 +107,27 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk,
 {
 	if (chunk->type == FMT_CHAR)
 		return dfp_putc(self, chunk->c);
-	if (chunk->type == FMT_PLACEHOLDER_C)
+	if (chunk->type == FMT_SPECIFIER_C)
 		return dfp_putc(self, va_arg(self->va, int));
-	if (chunk->type == FMT_PLACEHOLDER_LLD)
+	if (chunk->type == FMT_SPECIFIER_LLD)
 		return dfp_print_int_signed(self, va_arg(self->va, long long));
-	if (chunk->type == FMT_PLACEHOLDER_LD)
+	if (chunk->type == FMT_SPECIFIER_LD)
 		return dfp_print_int_signed(self, va_arg(self->va, long));
-	if (chunk->type == FMT_PLACEHOLDER_D)
+	if (chunk->type == FMT_SPECIFIER_D)
 		return dfp_print_int_signed(self, va_arg(self->va, int));
-	if (chunk->type == FMT_PLACEHOLDER_LLU)
+	if (chunk->type == FMT_SPECIFIER_LLU)
 		return dfp_print_int(self, va_arg(self->va, unsigned long long));
-	if (chunk->type == FMT_PLACEHOLDER_LU)
+	if (chunk->type == FMT_SPECIFIER_LU)
 		return dfp_print_int(self, va_arg(self->va, unsigned long));
-	if (chunk->type == FMT_PLACEHOLDER_U)
+	if (chunk->type == FMT_SPECIFIER_U)
 		return dfp_print_int(self, va_arg(self->va, unsigned int));
-	if (chunk->type == FMT_PLACEHOLDER_P)
+	if (chunk->type == FMT_SPECIFIER_P)
 		return dfp_print_int(self, va_arg(self->va, uintptr_t));
 #ifndef NO_FLOAT
-	if (chunk->type == FMT_PLACEHOLDER_F)
+	if (chunk->type == FMT_SPECIFIER_F)
 		return dfp_print_float(self, va_arg(self->va, double));
 #endif
-	if (chunk->type == FMT_PLACEHOLDER_S)
+	if (chunk->type == FMT_SPECIFIER_S)
 		return self->puts(va_arg(self->va, const char *));
 
 	*error = 1;

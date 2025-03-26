@@ -1,23 +1,23 @@
 #ifndef __FMT_PARSER_H
 #define __FMT_PARSER_H
 
-enum fmt_parser_data_t {
-	FMT_PLACEHOLDER_D,
-	FMT_PLACEHOLDER_LD,
-	FMT_PLACEHOLDER_LLD,
-	FMT_PLACEHOLDER_U,
-	FMT_PLACEHOLDER_LU,
-	FMT_PLACEHOLDER_LLU,
-	FMT_PLACEHOLDER_P,
-	FMT_PLACEHOLDER_F,
-	FMT_PLACEHOLDER_S,
-	FMT_PLACEHOLDER_C,
+enum fmt_parser_chunk_type {
+	FMT_SPECIFIER_D,
+	FMT_SPECIFIER_LD,
+	FMT_SPECIFIER_LLD,
+	FMT_SPECIFIER_U,
+	FMT_SPECIFIER_LU,
+	FMT_SPECIFIER_LLU,
+	FMT_SPECIFIER_P,
+	FMT_SPECIFIER_F,
+	FMT_SPECIFIER_S,
+	FMT_SPECIFIER_C,
 	FMT_CHAR,
 	FMT_INVALID,
 };
 
 struct fmt_parser_chunk {
-	enum fmt_parser_data_t type;
+	enum fmt_parser_chunk_type type;
 	union {
 		char c;
 		/* when width got supported, put the width data here */

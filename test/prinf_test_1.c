@@ -40,7 +40,7 @@ int main()
 	assert(printf("< float:\t\t\t%f\n", tmp_f) != -1);
 	assert(DFP_PRINTF("> float:\t\t\t%f\n", tmp_f) != -1);
 
-	/* invalid placeholder %t */
+	/* invalid specifier %t */
 	printf("unkown %t.\n");
 
 	/* DFP will print it directly unlike printf. (for debugging) */

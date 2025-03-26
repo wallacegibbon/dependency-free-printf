@@ -3,40 +3,40 @@
 
 static int cmp_n(const char *s1, const char *s2, int size);
 
-struct placeholder_table_item {
+struct specifier_unit {
 	const char *name;
-	/* The number of placeholder strings will never be more than 256. */
+	/* The number of specifier chars is less than 3 */
 	unsigned char size;
-	enum fmt_parser_data_t type;
+	enum fmt_parser_chunk_type type;
 };
 
-static const struct placeholder_table_item placeholder_table[] = {
-	{"d", 1, FMT_PLACEHOLDER_D},
-	{"i", 1, FMT_PLACEHOLDER_D},
-	{"ld", 2, FMT_PLACEHOLDER_LD},
-	{"li", 2, FMT_PLACEHOLDER_LD},
-	{"lld", 3, FMT_PLACEHOLDER_LLD},
-	{"lli", 3, FMT_PLACEHOLDER_LLD},
-	{"x", 1, FMT_PLACEHOLDER_U},
-	{"u", 1, FMT_PLACEHOLDER_U},
-	{"lu", 2, FMT_PLACEHOLDER_LU},
-	{"llu", 3, FMT_PLACEHOLDER_LLU},
-	{"p", 1, FMT_PLACEHOLDER_P},
-	{"f", 1, FMT_PLACEHOLDER_F},
-	{"s", 1, FMT_PLACEHOLDER_S},
-	{"c", 1, FMT_PLACEHOLDER_C},
+static const struct specifier_unit specifier_table[] = {
+	{"d", 1, FMT_SPECIFIER_D},
+	{"i", 1, FMT_SPECIFIER_D},
+	{"ld", 2, FMT_SPECIFIER_LD},
+	{"li", 2, FMT_SPECIFIER_LD},
+	{"lld", 3, FMT_SPECIFIER_LLD},
+	{"lli", 3, FMT_SPECIFIER_LLD},
+	{"x", 1, FMT_SPECIFIER_U},
+	{"u", 1, FMT_SPECIFIER_U},
+	{"lu", 2, FMT_SPECIFIER_LU},
+	{"llu", 3, FMT_SPECIFIER_LLU},
+	{"p", 1, FMT_SPECIFIER_P},
+	{"f", 1, FMT_SPECIFIER_F},
+	{"s", 1, FMT_SPECIFIER_S},
+	{"c", 1, FMT_SPECIFIER_C},
 };
 
-#define PLACEHOLDER_TABLE_SIZE \
-		(sizeof(placeholder_table) / sizeof(placeholder_table[0]))
+#define SPECIFIER_TABLE_SIZE \
+		(sizeof(specifier_table) / sizeof(specifier_table[0]))
 
-static int find_placeholder_item(const char *s,
-		const struct placeholder_table_item **result)
+static int find_specifier_item(const char *s,
+		const struct specifier_unit **result)
 {
-	const struct placeholder_table_item *tmp;
+	const struct specifier_unit *tmp;
 	unsigned char i;
-	for (i = 0; i < PLACEHOLDER_TABLE_SIZE; i++) {
-		tmp = &placeholder_table[i];
+	for (i = 0; i < SPECIFIER_TABLE_SIZE; i++) {
+		tmp = &specifier_table[i];
 		if (!cmp_n(s, tmp->name, tmp->size)) {
 			*result = tmp;
 			return 0;
@@ -46,12 +46,12 @@ static int find_placeholder_item(const char *s,
 	return 1;
 }
 
-static int fmt_parser_placeholder(struct fmt_parser *self,
+static int fmt_parser_specifier(struct fmt_parser *self,
 		struct fmt_parser_chunk *result)
 {
-	const struct placeholder_table_item *item;
+	const struct specifier_unit *item;
 
-	if (find_placeholder_item(self->fmt, &item))
+	if (find_specifier_item(self->fmt, &item))
 		return 1;
 
 	self->fmt += item->size;
@@ -82,7 +82,7 @@ int fmt_parser_step(struct fmt_parser *self, struct fmt_parser_chunk *result)
 	if (*self->fmt == '%')
 		return fmt_parser_normal_char(self, result);
 
-	if (fmt_parser_placeholder(self, result) == 0)
+	if (fmt_parser_specifier(self, result) == 0)
 		return 0;
 
 	/* unknown control char, just print it as normal char */

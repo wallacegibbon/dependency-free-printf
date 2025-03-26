@@ -9,28 +9,28 @@ int main()
 	fmt_parser_init(&parser, "%lld,%lli,%llu,%s\n");
 
 	assert(!fmt_parser_step(&parser, &chunk));
-	assert(chunk.type == FMT_PLACEHOLDER_LLD);
+	assert(chunk.type == FMT_SPECIFIER_LLD);
 
 	assert(!fmt_parser_step(&parser, &chunk));
 	assert(chunk.type == FMT_CHAR);
 	assert(chunk.c == ',');
 
 	assert(!fmt_parser_step(&parser, &chunk));
-	assert(chunk.type == FMT_PLACEHOLDER_LLD);
+	assert(chunk.type == FMT_SPECIFIER_LLD);
 
 	assert(!fmt_parser_step(&parser, &chunk));
 	assert(chunk.type == FMT_CHAR);
 	assert(chunk.c == ',');
 
 	assert(!fmt_parser_step(&parser, &chunk));
-	assert(chunk.type == FMT_PLACEHOLDER_LLU);
+	assert(chunk.type == FMT_SPECIFIER_LLU);
 
 	assert(!fmt_parser_step(&parser, &chunk));
 	assert(chunk.type == FMT_CHAR);
 	assert(chunk.c == ',');
 
 	assert(!fmt_parser_step(&parser, &chunk));
-	assert(chunk.type == FMT_PLACEHOLDER_S);
+	assert(chunk.type == FMT_SPECIFIER_S);
 
 	assert(!fmt_parser_step(&parser, &chunk));
 	assert(chunk.type == FMT_CHAR);
