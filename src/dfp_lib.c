@@ -103,18 +103,18 @@ static int dfp_print_float(struct dfp *self, double value)
 	return n;
 }
 
+#endif /* NO_FLOAT */
+
 static int dfp_print_pointer(struct dfp *self, uintptr_t pointer)
 {
 	int n = 0;
-	if (pointer == NULL)
+	if (pointer == (uintptr_t)NULL)
 		return self->puts("(null)");
 
 	n += self->puts("0x");
 	n += dfp_print_int(self, pointer, 16);
 	return n;
 }
-
-#endif /* NO_FLOAT */
 
 static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk,
 		int *error)

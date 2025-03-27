@@ -18,3 +18,11 @@ DFP_PRINTF("%s", "hello");
 
 You should check the return values on serious programs.
 
+## Float
+
+Float number support can be disabled by set env variable
+
+e.g.
+```sh
+NO_FLOAT=1 ./run-tests.sh
+```

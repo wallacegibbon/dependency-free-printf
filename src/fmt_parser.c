@@ -24,7 +24,9 @@ static const struct specifier_unit specifier_table[] = {
 	{"lx", 2, FMT_SPECIFIER_LX},
 	{"llx", 3, FMT_SPECIFIER_LLX},
 	{"p", 1, FMT_SPECIFIER_P},
+#ifndef NO_FLOAT
 	{"f", 1, FMT_SPECIFIER_F},
+#endif
 	{"s", 1, FMT_SPECIFIER_S},
 	{"c", 1, FMT_SPECIFIER_C},
 };
