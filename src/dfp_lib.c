@@ -1,6 +1,7 @@
 #include "dfp_lib.h"
 #include "fmt_parser.h"
 #include <stdint.h>
+#include <stddef.h>
 
 /*
  * According to <https://en.cppreference.com/w/c/language/conversion>:
@@ -19,15 +20,17 @@ static struct dfp default_dfp;
 
 static int dfp_putc(struct dfp *self, int c);
 
+static const char digit_chars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 static int dfp_print_int_with_width(struct dfp *self, unsigned long long value,
-		int width)
+		int base, int width)
 {
 	/*
 	 * The decimal string of 2**64 have 20 characters,
-	 * so 32B is enough for any 64-bit integer.
+	 * so 24 bytes is enough for any 64-bit integer.
 	 * And integer won't be bigger than 64-bit in the near future.
 	 */
-#define INT_BUFFER_SIZE 32
+#define INT_BUFFER_SIZE 24
 	char buffer[INT_BUFFER_SIZE];
 	int start, dry_width, i;
 
@@ -45,8 +48,8 @@ static int dfp_print_int_with_width(struct dfp *self, unsigned long long value,
 	 * it always points to the next position to store.
 	 */
 	while (value > 0) {
-		buffer[start--] = value % 10 + '0';
-		value /= 10;
+		buffer[start--] = digit_chars[value % base];
+		value /= base;
 	}
 
 	dry_width = INT_BUFFER_SIZE - 2 - start;
@@ -59,12 +62,12 @@ static int dfp_print_int_with_width(struct dfp *self, unsigned long long value,
 	return INT_BUFFER_SIZE - 2 - start;
 }
 
-static int dfp_print_int(struct dfp *self, unsigned long long value)
+static int dfp_print_int(struct dfp *self, unsigned long long value, int base)
 {
-	return dfp_print_int_with_width(self, value, 0);
+	return dfp_print_int_with_width(self, value, base, 0);
 }
 
-static int dfp_print_int_signed(struct dfp *self, long long value)
+static int dfp_print_int_signed(struct dfp *self, long long value, int base)
 {
 	int n = 0;
 
@@ -73,7 +76,7 @@ static int dfp_print_int_signed(struct dfp *self, long long value)
 		n += dfp_putc(self, '-');
 	}
 
-	n += dfp_print_int(self, value);
+	n += dfp_print_int(self, value, base);
 	return n;
 }
 
@@ -89,14 +92,25 @@ static int dfp_print_float(struct dfp *self, double value)
 	int n = 0;
 
 	tmp = (long long)value;
-	n += dfp_print_int_signed(self, tmp);
+	n += dfp_print_int_signed(self, tmp, 10);
 
 	dfp_putc(self, '.');
 	n += 1;
 
 	tmp = (long long)((value - tmp) * 1000000);
-	n += dfp_print_int(self, tmp);
+	n += dfp_print_int(self, tmp, 10);
 
+	return n;
+}
+
+static int dfp_print_pointer(struct dfp *self, uintptr_t pointer)
+{
+	int n = 0;
+	if (pointer == NULL)
+		return self->puts("(null)");
+
+	n += self->puts("0x");
+	n += dfp_print_int(self, pointer, 16);
 	return n;
 }
 
@@ -110,19 +124,25 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk,
 	if (chunk->type == FMT_SPECIFIER_C)
 		return dfp_putc(self, va_arg(self->va, int));
 	if (chunk->type == FMT_SPECIFIER_LLD)
-		return dfp_print_int_signed(self, va_arg(self->va, long long));
+		return dfp_print_int_signed(self, va_arg(self->va, long long), 10);
 	if (chunk->type == FMT_SPECIFIER_LD)
-		return dfp_print_int_signed(self, va_arg(self->va, long));
+		return dfp_print_int_signed(self, va_arg(self->va, long), 10);
 	if (chunk->type == FMT_SPECIFIER_D)
-		return dfp_print_int_signed(self, va_arg(self->va, int));
+		return dfp_print_int_signed(self, va_arg(self->va, int), 10);
 	if (chunk->type == FMT_SPECIFIER_LLU)
-		return dfp_print_int(self, va_arg(self->va, unsigned long long));
+		return dfp_print_int(self, va_arg(self->va, unsigned long long), 10);
 	if (chunk->type == FMT_SPECIFIER_LU)
-		return dfp_print_int(self, va_arg(self->va, unsigned long));
+		return dfp_print_int(self, va_arg(self->va, unsigned long), 10);
 	if (chunk->type == FMT_SPECIFIER_U)
-		return dfp_print_int(self, va_arg(self->va, unsigned int));
+		return dfp_print_int(self, va_arg(self->va, unsigned int), 10);
+	if (chunk->type == FMT_SPECIFIER_LLX)
+		return dfp_print_int(self, va_arg(self->va, unsigned long long), 16);
+	if (chunk->type == FMT_SPECIFIER_LX)
+		return dfp_print_int(self, va_arg(self->va, unsigned long), 16);
+	if (chunk->type == FMT_SPECIFIER_X)
+		return dfp_print_int(self, va_arg(self->va, unsigned int), 16);
 	if (chunk->type == FMT_SPECIFIER_P)
-		return dfp_print_int(self, va_arg(self->va, uintptr_t));
+		return dfp_print_pointer(self, va_arg(self->va, uintptr_t));
 #ifndef NO_FLOAT
 	if (chunk->type == FMT_SPECIFIER_F)
 		return dfp_print_float(self, va_arg(self->va, double));
