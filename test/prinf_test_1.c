@@ -56,7 +56,6 @@ int main()
 	/* DFP will print it directly unlike printf. (for debugging) */
 	assert(DFP_PRINTF("unkown %t.\n") == 11);
 
-	/* DFP treat %x as %u to save code space */
 	printf("< %%x test: %x\n", 0xab);
 	DFP_PRINTF("> %%x test: %x\n", 0xab);
 
