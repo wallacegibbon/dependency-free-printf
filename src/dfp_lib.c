@@ -119,36 +119,38 @@ static int dfp_print_pointer(struct dfp *self, uintptr_t pointer)
 static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk,
 		int *error)
 {
-	if (chunk->type == FMT_CHAR)
+	switch (chunk->type) {
+	case FMT_CHAR:
 		return dfp_putc(self, chunk->c);
-	if (chunk->type == FMT_SPECIFIER_C)
+	case FMT_SPECIFIER_C:
 		return dfp_putc(self, va_arg(self->va, int));
-	if (chunk->type == FMT_SPECIFIER_LLD)
+	case FMT_SPECIFIER_LLD:
 		return dfp_print_int_signed(self, va_arg(self->va, long long), 10);
-	if (chunk->type == FMT_SPECIFIER_LD)
+	case FMT_SPECIFIER_LD:
 		return dfp_print_int_signed(self, va_arg(self->va, long), 10);
-	if (chunk->type == FMT_SPECIFIER_D)
+	case FMT_SPECIFIER_D:
 		return dfp_print_int_signed(self, va_arg(self->va, int), 10);
-	if (chunk->type == FMT_SPECIFIER_LLU)
+	case FMT_SPECIFIER_LLU:
 		return dfp_print_int(self, va_arg(self->va, unsigned long long), 10);
-	if (chunk->type == FMT_SPECIFIER_LU)
+	case FMT_SPECIFIER_LU:
 		return dfp_print_int(self, va_arg(self->va, unsigned long), 10);
-	if (chunk->type == FMT_SPECIFIER_U)
+	case FMT_SPECIFIER_U:
 		return dfp_print_int(self, va_arg(self->va, unsigned int), 10);
-	if (chunk->type == FMT_SPECIFIER_LLX)
+	case FMT_SPECIFIER_LLX:
 		return dfp_print_int(self, va_arg(self->va, unsigned long long), 16);
-	if (chunk->type == FMT_SPECIFIER_LX)
+	case FMT_SPECIFIER_LX:
 		return dfp_print_int(self, va_arg(self->va, unsigned long), 16);
-	if (chunk->type == FMT_SPECIFIER_X)
+	case FMT_SPECIFIER_X:
 		return dfp_print_int(self, va_arg(self->va, unsigned int), 16);
-	if (chunk->type == FMT_SPECIFIER_P)
+	case FMT_SPECIFIER_P:
 		return dfp_print_pointer(self, va_arg(self->va, uintptr_t));
 #ifndef NO_FLOAT
-	if (chunk->type == FMT_SPECIFIER_F)
+	case FMT_SPECIFIER_F:
 		return dfp_print_float(self, va_arg(self->va, double));
 #endif
-	if (chunk->type == FMT_SPECIFIER_S)
+	case FMT_SPECIFIER_S:
 		return self->puts(va_arg(self->va, const char *));
+	}
 
 	*error = 1;
 	return 0;

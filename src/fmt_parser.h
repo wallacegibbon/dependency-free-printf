@@ -16,7 +16,6 @@ enum fmt_parser_chunk_type {
 	FMT_SPECIFIER_S,
 	FMT_SPECIFIER_C,
 	FMT_CHAR,
-	FMT_INVALID,
 };
 
 struct fmt_parser_chunk {

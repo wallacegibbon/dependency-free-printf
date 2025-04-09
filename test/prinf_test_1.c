@@ -51,14 +51,16 @@ int main()
 	assert(DFP_PRINTF("< pointer:\t\t%p\n", NULL) != -1);
 
 	/* invalid specifier %t */
-	printf("unkown %t.\n");
+	printf("unkown %Q.\n");
 
 	/* DFP will print it directly unlike printf. (for debugging) */
-	assert(DFP_PRINTF("unkown %t.\n") == 11);
+	assert(DFP_PRINTF("unkown %Q.\n") == 11);
 
 	printf("< %%x test: %x\n", 0xab);
 	DFP_PRINTF("> %%x test: %x\n", 0xab);
 
+	printf("%%s test: %s\n", "hello");
+	DFP_PRINTF("%%s test: %s\n", "hello");
 	return 0;
 }
 

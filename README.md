@@ -26,3 +26,20 @@ e.g.
 ```sh
 NO_FLOAT=1 ./run-tests.sh
 ```
+
+## Example
+
+Here is a sample of `puts` used on STM32 (or similar devices):
+
+```c
+int my_puts(const char *s)
+{
+	int n = 0, c;
+	for (c = *s; c; c = *s++, n++) {
+		while (UART1->SR & USART_FLAG_TXE) == 0);
+		UART1->DR = c;
+	}
+	while (UART1->SR & USART_FLAG_TC) == 0);
+	return n;
+}
+```
