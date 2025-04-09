@@ -116,8 +116,7 @@ static int dfp_print_pointer(struct dfp *self, uintptr_t pointer)
 	return n;
 }
 
-static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk,
-		int *error)
+static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk)
 {
 	switch (chunk->type) {
 	case FMT_CHAR:
@@ -150,9 +149,11 @@ static int dfp_step(struct dfp *self, struct fmt_parser_chunk *chunk,
 #endif
 	case FMT_SPECIFIER_S:
 		return self->puts(va_arg(self->va, const char *));
+	default:
+		return self->puts("(DFP-PRINTF-SPECIFIER-ERROR)");
 	}
 
-	*error = 1;
+	/* Program should not reach here */
 	return 0;
 }
 
@@ -161,18 +162,18 @@ int dfp_vprintf(struct dfp *self, const char *fmt, va_list va)
 	struct fmt_parser parser;
 	struct fmt_parser_chunk chunk;
 	int n = 0;
-	int error = 0;
 
 	if (fmt_parser_init(&parser, fmt))
 		return -1;
 
 	va_copy(self->va, va);
-	while (!fmt_parser_step(&parser, &chunk) && !error)
-		n += dfp_step(self, &chunk, &error);
+	while (!fmt_parser_step(&parser, &chunk))
+		n += dfp_step(self, &chunk);
 
-	/* dfp error (caused by `dfp_step`) or parser error (unfinished fmt) */
-	if (error || !fmt_parser_finished(&parser))
-		n = -1;
+	if (!fmt_parser_finished(&parser)) {
+		n += self->puts("(DFP-PRINTF-ERROR)");
+		return -n;
+	}
 
 	return n;
 }
@@ -180,7 +181,7 @@ int dfp_vprintf(struct dfp *self, const char *fmt, va_list va)
 /* Unlike `putc` in standard C, `DFP_putc` returns 1 */
 static int dfp_putc(struct dfp *self, int c)
 {
-	char buf[2] = { 0 };
+	char buf[2] = {0};
 	buf[0] = c;
 	self->puts(buf);
 	return 1;

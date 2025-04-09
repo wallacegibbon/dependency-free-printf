@@ -82,7 +82,7 @@ int fmt_parser_step(struct fmt_parser *self, struct fmt_parser_chunk *result)
 
 	self->fmt++;
 
-	/* '%%' */
+	/* %% */
 	if (*self->fmt == '%')
 		return fmt_parser_normal_char(self, result);
 
