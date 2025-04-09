@@ -36,10 +36,10 @@ int my_puts(const char *s)
 {
 	int n = 0, c;
 	for (c = *s; c; c = *s++, n++) {
-		while (UART1->SR & USART_FLAG_TXE) == 0);
+		while ((UART1->SR & USART_FLAG_TXE) == 0);
 		UART1->DR = c;
 	}
-	while (UART1->SR & USART_FLAG_TC) == 0);
+	while ((UART1->SR & USART_FLAG_TC) == 0);
 	return n;
 }
 ```
